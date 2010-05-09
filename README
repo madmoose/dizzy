@@ -51,7 +51,8 @@ a linear address. I haven't figured out the cleanest way to handle this yet.
 Basic blocks should probably be tracked.
 
 Register tracing should be done on the edge graph or basic block graph in a
-proper data-flow analysis way.
+proper data-flow analysis way. Oh, and the flags register is currently not being
+traced.
 
 Once register tracing is in, we can create a segment table with data segments in
 it. This'll allow naming of memory references.
@@ -59,6 +60,9 @@ it. This'll allow naming of memory references.
 Functions should be autodetected. It's not hard, just start with a call
 destination and the follow all paths until they've hit a ret. This'll cover 99%
 of the cases.
+
+There's a confusion of c strings and c++ std::strings in the code. This needs a
+decision.
 
 ... lots of other stuff. Happy happy joy joy :)
 
