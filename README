@@ -1,0 +1,67 @@
+dizzy - an x86_16 DOS executable disassembler.
+
+So, ehm, hi. This is dizzy, a little disassembler I built for 16 bit MS-DOS
+executables.
+
+It disassembles by tracing through the executable image, starting at the initial
+CS:IP as defined in the EXE header, following all jumps and calls it finds. For
+every byte it encounters, it jots down which bytes are OPs, and uses this when
+it does the final write to screen.
+
+It also attempts to do register tracing. This means that it remembers when a
+known value (immediate or constant) is put in a register, and when registers
+with known values are moved to other registers, etc. This is useful for finding
+segments in the executable and annotating interrupt calls, amongst other things.
+Currently the register tracing is intermingled with the code tracing and done
+with minimal regard to code flow.
+
+Also recently hacked in was the ability to name functions in the disassembly.
+The disassembler even comes pre-packaged (read: hardcoded...) with a short list
+of function names for Zak McKracken and the Alien Mindbenders, taken from
+ScummVM.
+
+Note that the code isn't particularly pretty. There's a lot of half-made
+decisions and half-implemented ideas. Clean-up will be performed once I can't
+defer it any longer or it becomes a severe hindrance to new features. Or
+somebody does it for me... *hint* *hint*
+
+Anyway, enjoy!
+
+BUILDING
+
+On Mac OS X 10.6:
+
+A simple 'make' should do.
+
+On other systems:
+
+Probably doesn't build cleanly on anything other than Mac OS X 10.n. Patches
+accepted! (But please, nothing involving automake...)
+
+RUNNING
+
+./dizzy <path/to.exe>
+
+TODO
+
+The x86_16 segment/offset memory model is weird. An address of this form is
+represented by the segofs_t type. Some things that a segofs_t, some things take
+a linear address. I haven't figured out the cleanest way to handle this yet.
+
+Basic blocks should probably be tracked.
+
+Register tracing should be done on the edge graph or basic block graph in a
+proper data-flow analysis way.
+
+Once register tracing is in, we can create a segment table with data segments in
+it. This'll allow naming of memory references.
+
+Functions should be autodetected. It's not hard, just start with a call
+destination and the follow all paths until they've hit a ret. This'll cover 99%
+of the cases.
+
+... lots of other stuff. Happy happy joy joy :)
+
+CONTACT
+
+Hit me up on irc.freenode.net, nick madmoose.
