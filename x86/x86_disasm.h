@@ -205,4 +205,3 @@ struct x86_insn
 x86_insn x86_decode(const byte *p);
 
 #endif
-

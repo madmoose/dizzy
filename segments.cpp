@@ -47,4 +47,3 @@ segofs_t segments_t::addr_to_segofs(uint32 ea)
 
 	return segofs;
 }
-

@@ -95,7 +95,7 @@ const char *str_ops[] = {
 	"mul",
 	"neg",
 	"nop",
-	"not"	,
+	"not",
 	"or",
 	"out",
 	"pop",
