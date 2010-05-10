@@ -48,7 +48,7 @@ uint16 inline letoh16(uint16 a) {
 uint16 inline betoh16(uint16 a) {
 	return swap16(a);
 }
-#elif
+#else
 #error Unknown endianess!
 #endif
 

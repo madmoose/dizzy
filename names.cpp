@@ -1,4 +1,5 @@
 #include "names.h"
+#include "ioutils.h"
 
 #include <iostream>
 #include <fstream>
@@ -17,7 +18,7 @@ names_t *load_names(const std::string &filename)
 {
 	std::ifstream ifs(filename.c_str());
 
-	uint16_t seg, ofs;
+	uint16 seg, ofs;
 	std::string type, name;
 
 	names_t *names = new names_t();

@@ -1,12 +1,11 @@
 #ifndef DIZ_H
 #define DIZ_H
 
+#include "ioutils.h"
+
 #include "functions.h"
 #include "segofs.h"
 #include "segments.h"
-
-#define HI(x) (((x) >> 8) & 0xff)
-#define LO(x) ((x) & 0xff)
 
 struct exeheader_t {
 	uint16 signature;       /* EXE Signature MZ or ZM */

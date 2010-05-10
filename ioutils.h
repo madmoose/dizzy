@@ -17,6 +17,9 @@ typedef signed long  int32;
 typedef unsigned int uint;
 #endif
 
+#define HI(x) (((x) >> 8) & 0xff)
+#define LO(x) ((x) & 0xff)
+
 uint16 inline swap16(uint16 a);
 uint32 inline swap32(uint32 a);
 
