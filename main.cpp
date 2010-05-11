@@ -211,7 +211,7 @@ void diz_t::trace_code()
 
 		uint32 ea = segofs.addr();
 
-		segments.extend_segment_to(segofs.seg, ea);
+		segments.extend_segment_to(segofs.seg, ea, SEG_CODE);
 
 		bool block_stop;
 		do {
@@ -259,7 +259,7 @@ void diz_t::trace_code()
 			block_stop = is_block_stop_op(insn);
 		} while (ea < imagesize && imageattr[ea] == UNDEF && !block_stop);
 
-		segments.extend_segment_to(segofs.seg, ea);
+		segments.extend_segment_to(segofs.seg, ea, SEG_CODE);
 	}
 
 	// Mark some bare nop's and retf's as code.
