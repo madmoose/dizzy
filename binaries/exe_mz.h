@@ -4,13 +4,13 @@
 #include "../base/base.h"
 #include "binary.h"
 
-struct exe_mz_loader : public binary_loader {
+struct exe_mz_loader_t : public binary_loader_t {
 	std::string name() { return "DOS MZ executable"; }
 
-	void load(raw_istream &is);
+	void load(raw_istream_t &is, uint32 base);
 };
 
-struct exe_mz_header {      // DOS .EXE header
+struct exe_mz_header_t {      // DOS .EXE header
 	uint16 e_magic;                     // Magic number
 	uint16 e_cblp;                      // Bytes on last page of file
 	uint16 e_cp;                        // Pages in file
@@ -31,8 +31,8 @@ struct exe_mz_header {      // DOS .EXE header
 	uint16 e_res2[10];                  // Reserved words
 	uint32 e_lfanew;                    // File address of new exe header
 
-	bool load(raw_istream &is);
-	bool save(raw_ostream &os);
+	bool load(raw_istream_t &is);
+	bool save(raw_ostream_t &os);
 	void dump();
 };
 

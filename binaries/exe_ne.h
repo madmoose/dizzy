@@ -4,13 +4,13 @@
 #include "../base/base.h"
 #include "binary.h"
 
-struct exe_ne_loader : public binary_loader {
+struct exe_ne_loader_t : public binary_loader_t {
 	std::string name() { return "Windows NE executable"; }
 
-        void load(raw_istream &is);
+        void load(raw_istream_t &is, uint32 base);
 };
 
-struct exe_ne_header {      // NE .EXE header
+struct exe_ne_header_t {      // NE .EXE header
 	uint16 ne_magic;                    // Magic number
 	byte   ne_ver;                      // Version number
 	byte   ne_rev;                      // Revision number
@@ -42,8 +42,8 @@ struct exe_ne_header {      // NE .EXE header
 	uint16 ne_swaparea;                 // Minimum code swap area size
 	uint16 ne_expver;                   // Expected Windows version number
 
-	bool load(raw_istream &is);
-	bool save(raw_ostream &os);
+	bool load(raw_istream_t &is);
+	bool save(raw_ostream_t &os);
 	void dump();
 };
 

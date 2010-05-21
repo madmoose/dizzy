@@ -4,5 +4,6 @@
 #include "types.h"
 #include "endian.h"
 #include "raw_stream.h"
+#include "data.h"
 
 #endif

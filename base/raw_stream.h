@@ -9,26 +9,26 @@
 /*
  * This header defines the following classes:
  *
- * raw_istream  - a virtual base class for input streams
- * raw_ifstream - a class for reading from files
- * raw_imstream - a class for reading from a piece of memory
+ * raw_istream_t  - a virtual base class for input streams
+ * raw_ifstream_t - a class for reading from files
+ * raw_imstream_t - a class for reading from a piece of memory
  *
- * raw_ostream  - a virtual base class for output streams
- * raw_omstream - a class for writing to a piece of memory
+ * raw_ostream_t  - a virtual base class for output streams
+ * raw_ostream_tm - a class for writing to a piece of memory
  *
  * For reading from a file, it's probably preferable to read the entire file
- * into memory using raw_imstream - there's a constructor that takes a filename.
+ * into memory using raw_imstream_t - there's a constructor that takes a filename.
  *
  */
 
-class raw_istream {
+class raw_istream_t {
 protected:
 	uint32 _size;
 	uint32 _pos;
 public:
-	raw_istream()
+	raw_istream_t()
 	{}
-	virtual ~raw_istream()
+	virtual ~raw_istream_t()
 	{}
 
 	virtual void read(byte *p, uint s) = 0;
@@ -53,11 +53,11 @@ public:
 	void reset();
 };
 
-class raw_ifstream : public raw_istream {
+class raw_ifstream_t : public raw_istream_t {
 	int _fd;
 public:
-	raw_ifstream(const std::string &filename);
-	~raw_ifstream();
+	raw_ifstream_t(const std::string &filename);
+	~raw_ifstream_t();
 
 	void read(byte *p, uint s);
 	void seek_set(uint p);
@@ -65,25 +65,25 @@ public:
 
 #define DELETE_WHEN_DONE true
 
-class raw_imstream : public raw_istream {
+class raw_imstream_t : public raw_istream_t {
 	byte *_p;
 	bool  _delete_when_done;
 public:
-	raw_imstream(byte *p, uint32 s, bool delete_when_done = false);
-	raw_imstream(const std::string &filename);
-	~raw_imstream();
+	raw_imstream_t(byte *p, uint32 s, bool delete_when_done = false);
+	raw_imstream_t(const std::string &filename);
+	~raw_imstream_t();
 
 	void read(byte *p, uint s);
 };
 
-class raw_ostream {
+class raw_ostream_t {
 protected:
 	uint32  _size;
 	uint32  _pos;
 public:
-	raw_ostream()
+	raw_ostream_t()
 	{}
-	virtual ~raw_ostream()
+	virtual ~raw_ostream_t()
 	{}
 
 	virtual void write(const byte *p, uint s) = 0;
@@ -104,139 +104,139 @@ public:
 	void seek_cur(int  d);
 };
 
-class raw_omstream : public raw_ostream {
+class raw_ostream_tm : public raw_ostream_t {
 protected:
 	byte   *_p;
 	bool    _delete_when_done;
 	bool    _expanding;
 	uint32  _capacity;
 public:
-	raw_omstream(byte *p, uint32 s, bool delete_when_done = false);
-	raw_omstream(uint32 size);
-	raw_omstream();
-	~raw_omstream();
+	raw_ostream_tm(byte *p, uint32 s, bool delete_when_done = false);
+	raw_ostream_tm(uint32 size);
+	raw_ostream_tm();
+	~raw_ostream_tm();
 
 	void write(const byte *p, uint s);
 };
 
 /*
- * raw_istream inline classes
+ * raw_istream_t inline classes
  */
 
 inline
-byte raw_istream::readbyte() {
+byte raw_istream_t::readbyte() {
 	byte a;
 	read(&a, sizeof(a));
 	return a;
 }
 
 inline
-uint16 raw_istream::readle16() {
+uint16 raw_istream_t::readle16() {
 	uint16 a;
 	read((byte*)&a, sizeof(a));
 	return letoh16(a);
 }
 
 inline
-uint16 raw_istream::readbe16() {
+uint16 raw_istream_t::readbe16() {
 	uint16 a;
 	read((byte*)&a, sizeof(a));
 	return betoh16(a);
 }
 
 inline
-uint32 raw_istream::readle32() {
+uint32 raw_istream_t::readle32() {
 	uint32 a;
 	read((byte*)&a, sizeof(uint32));
 	return letoh32(a);
 }
 
 inline
-uint32 raw_istream::readbe32() {
+uint32 raw_istream_t::readbe32() {
 	uint32 a;
 	read((byte*)&a, sizeof(a));
 	return betoh32(a);
 }
 
 inline
-uint16 raw_istream::readaheadbe16() {
+uint16 raw_istream_t::readaheadbe16() {
 	uint16 a = readbe16();
 	seek_cur(-2);
 	return a;
 }
 
 inline
-uint32 raw_istream::size() {
+uint32 raw_istream_t::size() {
 	return _size;
 }
 
 inline
-uint32 raw_istream::pos() {
+uint32 raw_istream_t::pos() {
 	return _pos;
 }
 
 inline
-uint32 raw_istream::rem() {
+uint32 raw_istream_t::rem() {
 	return size() - pos();
 }
 
 inline
-void raw_istream::seek_set(uint p)
+void raw_istream_t::seek_set(uint p)
 {
 	_pos = p;
 }
 
 inline
-void raw_istream::seek_cur(int d) {
+void raw_istream_t::seek_cur(int d) {
 	seek_set(pos() + d);
 }
 
 inline
-void raw_istream::reset() {
+void raw_istream_t::reset() {
 	seek_set(0);
 }
 
 /*
- * raw_imstream inline classes
+ * raw_imstream_t inline classes
  */
 
 inline
-void raw_imstream::read(byte *p, uint s)
+void raw_imstream_t::read(byte *p, uint s)
 {
 	memcpy(p, _p + _pos, s);
 	_pos += s;
 }
 
 /*
- * raw_ostream inline methods
+ * raw_ostream_t inline methods
  */
 
 inline
-uint32 raw_ostream::size()
+uint32 raw_ostream_t::size()
 {
 	return _size;
 }
 
 inline
-uint32 raw_ostream::pos()
+uint32 raw_ostream_t::pos()
 {
 	return _pos;
 }
 
 inline
-uint32 raw_ostream::rem()
+uint32 raw_ostream_t::rem()
 {
 	return size() - pos();
 }
 
 inline
-void raw_ostream::seek_set(uint p)
+void raw_ostream_t::seek_set(uint p)
 {
 	_pos = p;
 }
 
 inline
-void raw_ostream::seek_cur(int d) {
+void raw_ostream_t::seek_cur(int d) {
 	seek_set(pos() + d);
 }
 

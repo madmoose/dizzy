@@ -1,10 +1,44 @@
 #include "exe_mz.h"
 
-void exe_mz_loader::load(raw_istream &is)
+void exe_mz_loader_t::load(raw_istream_t &is, uint32 base)
 {
+	exe_mz_header_t head;
+	head.load(is);
+
+	head.dump();
+
+	uint32 psp_size = 512;
+
+	uint32 image_size = 512 * head.e_cp;
+	if (head.e_cblp)
+		image_size += head.e_cblp - 512;
+
+	uint32 alloc_size = psp_size
+	                  + image_size
+	                  + 16 * head.e_maxalloc;
+
+	memory_t memory(base - psp_size, alloc_size);
+
+	is.seek_set(16 * head.e_cparhdr);
+	is.read(&memory[base], image_size);
+
+	is.seek_set(head.e_lfarlc);
+
+	for (int i = 0; i != head.e_crlc; ++i)
+	{
+		uint16 ofs, seg;
+		ofs = is.readle16();
+		seg = is.readle16();
+
+		uint32 ea = base + (seg << 4) + ofs;
+
+		memory.writele16(ea, base + memory.readle16(ea));
+	}
+
+	set_load_image(memory);
 }
 
-bool exe_mz_header::load(raw_istream &is)
+bool exe_mz_header_t::load(raw_istream_t &is)
 {
 	e_magic     = is.readle16();
 	e_cblp      = is.readle16();
@@ -31,9 +65,11 @@ bool exe_mz_header::load(raw_istream &is)
 			e_res2[i] = is.readle16();
 		e_lfanew = is.readle32();
 	}
+	
+	return true;
 }
 
-bool exe_mz_header::save(raw_ostream &os)
+bool exe_mz_header_t::save(raw_ostream_t &os)
 {
 	os.writele16(e_magic);
 	os.writele16(e_cblp);
@@ -60,9 +96,11 @@ bool exe_mz_header::save(raw_ostream &os)
 			os.writele16(e_res2[i]);
 		os.writele32(e_lfanew);
 	}
+	
+	return true;
 }
 
-void exe_mz_header::dump()
+void exe_mz_header_t::dump()
 {
 	printf("DOS header\n");
 	printf("e_magic     = %04x\n", e_magic);

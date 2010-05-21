@@ -104,4 +104,60 @@ uint32 htobe32(uint32 a) {
 #error Unknown endianess!
 #endif
 
+inline
+uint16 readle16(byte *p)
+{
+	return p[0] + (p[1] << 8);
+}
+
+inline
+uint16 readbe16(byte *p)
+{
+	return p[1] + (p[0] << 8);
+}
+
+inline
+uint32 readle32(byte *p)
+{
+	return p[0] + (p[1] << 8) + (p[2] << 16) + (p[3] << 24);
+}
+
+inline
+uint32 readbe32(byte *p)
+{
+	return p[3] + (p[2] << 8) + (p[1] << 16) + (p[0] << 24);
+}
+
+inline
+void writele16(byte *p, uint16 a)
+{
+	p[0] = (a >>  0) & 0xff;
+	p[1] = (a >>  8) & 0xff;
+}
+
+inline
+void writebe16(byte *p, uint16 a)
+{
+	p[1] = (a >>  0) & 0xff;
+	p[0] = (a >>  8) & 0xff;
+}
+
+inline
+void writele32(byte *p, uint32 a)
+{
+	p[0] = (a >>  0) & 0xff;
+	p[1] = (a >>  8) & 0xff;
+	p[2] = (a >> 16) & 0xff;
+	p[3] = (a >> 24) & 0xff;
+}
+
+inline
+void writebe32(byte *p, uint32 a)
+{
+	p[3] = (a >>  0) & 0xff;
+	p[2] = (a >>  8) & 0xff;
+	p[1] = (a >> 16) & 0xff;
+	p[0] = (a >> 24) & 0xff;
+}
+
 #endif

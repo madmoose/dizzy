@@ -1,10 +1,32 @@
 #include "exe_ne.h"
+#include "exe_mz.h"
 
-void exe_ne_loader::load(raw_istream &is)
+void exe_ne_loader_t::load(raw_istream_t &is, uint32 base)
 {
+	exe_mz_header_t mz_head;
+	mz_head.load(is);
+
+	is.seek_set(mz_head.e_lfanew);
+
+	exe_ne_header_t ne_head;
+	ne_head.load(is);
+
+	ne_head.dump();
+
+	// Segment table
+	is.seek_set(mz_head.e_lfanew + ne_head.ne_segtab);
+	for (int i = 0; i != ne_head.ne_cseg; ++i)
+	{
+		uint16 ofs = is.readle16();
+		uint16 len = is.readle16();
+		uint16 flg = is.readle16();
+		uint16 alo = is.readle16();
+
+		printf("%04x %04x %04x %04x\n", ofs, len, flg, alo);
+	}
 }
 
-bool exe_ne_header::load(raw_istream &is)
+bool exe_ne_header_t::load(raw_istream_t &is)
 {
 	ne_magic        = is.readle16();
 	ne_ver          = is.readbyte();
@@ -36,9 +58,11 @@ bool exe_ne_header::load(raw_istream &is)
 	ne_psegrefbytes = is.readle16();
 	ne_swaparea     = is.readle16();
 	ne_expver       = is.readle16();
+	
+	return true;
 }
 
-bool exe_ne_header::save(raw_ostream &os)
+bool exe_ne_header_t::save(raw_ostream_t &os)
 {
 	os.writele16(ne_magic);
 	os.writebyte(ne_ver);
@@ -70,14 +94,16 @@ bool exe_ne_header::save(raw_ostream &os)
 	os.writele16(ne_psegrefbytes);
 	os.writele16(ne_swaparea);
 	os.writele16(ne_expver);
+	
+	return true;
 }
 
-void exe_ne_header::dump()
+void exe_ne_header_t::dump()
 {
 	printf("NE header\n");
 	printf("ne_magic        =     %04x\n", ne_magic);
-	printf("ne_ver          =         %02x\n", ne_ver);
-	printf("ne_rev          =         %02x\n", ne_rev);
+	printf("ne_ver          =       %02x\n", ne_ver);
+	printf("ne_rev          =       %02x\n", ne_rev);
 	printf("ne_enttab       =     %04x\n", ne_enttab);
 	printf("ne_cbenttab     =     %04x\n", ne_cbenttab);
 	printf("ne_crc          = %08x\n", ne_crc);
@@ -99,8 +125,8 @@ void exe_ne_header::dump()
 	printf("ne_cmovent      =     %04x\n", ne_cmovent);
 	printf("ne_align        =     %04x\n", ne_align);
 	printf("ne_cres         =     %04x\n", ne_cres);
-	printf("ne_exetyp       =         %02x\n", ne_exetyp);
-	printf("ne_flagsothers  =         %02x\n", ne_flagsothers);
+	printf("ne_exetyp       =       %02x\n", ne_exetyp);
+	printf("ne_flagsothers  =       %02x\n", ne_flagsothers);
 	printf("ne_pretthunks   =     %04x\n", ne_pretthunks);
 	printf("ne_psegrefbytes =     %04x\n", ne_psegrefbytes);
 	printf("ne_swaparea     =     %04x\n", ne_swaparea);
