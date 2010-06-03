@@ -18,8 +18,6 @@ class exe_mz_analyzer_t
 public:
 	void init(exe_mz_t *abinary);
 	void analyze();
-	void dump();
-
 	void output(fmt_stream &fs) const;
 private:
 	void load();
@@ -27,7 +25,6 @@ private:
 	void make_segments();
 	void trace();
 	void analyze_branch(x86_16_address_t addr, const x86_insn &insn, addr_queue_t &cs_ip_queue);
-
 };
 
 #endif

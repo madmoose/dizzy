@@ -6,7 +6,7 @@ void exe_mz_analyzer_t::init(exe_mz_t *abinary)
 {
 	binary = abinary;
 
-	// read annotations
+	// TODO: read annotations
 }
 
 void exe_mz_analyzer_t::analyze()
@@ -44,6 +44,7 @@ void exe_mz_analyzer_t::relocate()
 
 void exe_mz_analyzer_t::make_segments()
 {
+	// Make segments from relocations
 	for (uint i = 0; i != binary->relocations.size(); ++i)
 	{
 		exe_mz_relocation_t reloc = binary->relocations[i];
@@ -56,6 +57,7 @@ void exe_mz_analyzer_t::make_segments()
 		segments.make_segment(base_seg + seg);
 	}
 
+	// Make stack segment
 	segments.make_segment(base_seg + binary->head.e_ss);
 
 	segments.dump();
