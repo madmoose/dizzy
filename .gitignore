@@ -1,4 +1,6 @@
+.DS_Store
 dizzy
+a.out
 *.o
 *.d
 *.swp

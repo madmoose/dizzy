@@ -1,6 +1,8 @@
 #ifndef X86_DISASM_H
 #define X86_DISASM_H
 
+#include "../base/base.h"
+
 enum e_ops {
 	op_illegal,
 	op_aaa,

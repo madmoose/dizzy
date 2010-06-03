@@ -14,7 +14,7 @@
  * raw_imstream_t - a class for reading from a piece of memory
  *
  * raw_ostream_t  - a virtual base class for output streams
- * raw_ostream_tm - a class for writing to a piece of memory
+ * raw_ostream_t  - a class for writing to a piece of memory
  *
  * For reading from a file, it's probably preferable to read the entire file
  * into memory using raw_imstream_t - there's a constructor that takes a filename.

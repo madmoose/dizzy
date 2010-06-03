@@ -1,41 +1,35 @@
 #include "exe_mz.h"
 
-void exe_mz_loader_t::load(raw_istream_t &is, uint32 base)
+exe_mz_t::~exe_mz_t()
 {
-	exe_mz_header_t head;
+	delete[] image;
+}
+
+void exe_mz_t::load(raw_istream_t &is)
+{
 	head.load(is);
 
-	head.dump();
-
-	uint32 psp_size = 512;
-
-	uint32 image_size = 512 * head.e_cp;
+	image_size = 512 * head.e_cp;
 	if (head.e_cblp)
 		image_size += head.e_cblp - 512;
 
-	uint32 alloc_size = psp_size
-	                  + image_size
-	                  + 16 * head.e_maxalloc;
-
-	memory_t memory(base - psp_size, alloc_size);
+	image = new byte[image_size];
 
 	is.seek_set(16 * head.e_cparhdr);
-	is.read(&memory[base], image_size);
+	is.read(image, image_size);
 
+	// Read relocations
+	relocations.reserve(head.e_crlc);
 	is.seek_set(head.e_lfarlc);
-
 	for (int i = 0; i != head.e_crlc; ++i)
 	{
-		uint16 ofs, seg;
-		ofs = is.readle16();
-		seg = is.readle16();
+		exe_mz_relocation_t reloc;
 
-		uint32 ea = base + (seg << 4) + ofs;
+		reloc.ofs = is.readle16();
+		reloc.seg = is.readle16();
 
-		memory.writele16(ea, base + memory.readle16(ea));
+		relocations.push_back(reloc);
 	}
-
-	set_load_image(memory);
 }
 
 bool exe_mz_header_t::load(raw_istream_t &is)

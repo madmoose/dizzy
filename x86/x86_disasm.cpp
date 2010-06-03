@@ -1,11 +1,10 @@
+#include "x86_disasm.h"
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "../ioutils.h"
-#include "x86_disasm.h"
 
 const char *str_ops[] = {
 	"<illegal>",
@@ -528,7 +527,7 @@ void x86_insn_arg::to_str(char *str)
 
 	if (kind == KN_IMM)
 	{
-		sprintf(str, size == SZ_BYTE ? "%02lX" : "%04lX", imm);
+		sprintf(str, size == SZ_BYTE ? "%02X" : "%04X", imm);
 		return;
 	}
 
@@ -646,12 +645,12 @@ void x86_insn::to_str(char *str)
 		if (arg[0].size == SZ_BYTE)
 		{
 			sprintf(str+strlen(str), "%08X", (int8)(arg[0].imm + op_size));
-			sprintf(str+strlen(str), " ($%c%lx)", arg[0].imm & 0x80 ? '-' : '+', (arg[0].imm & 0x80 ? -arg[0].imm : arg[0].imm) & 0xff);
+			sprintf(str+strlen(str), " ($%c%x)", arg[0].imm & 0x80 ? '-' : '+', (arg[0].imm & 0x80 ? -arg[0].imm : arg[0].imm) & 0xff);
 		}
 		else
 		{
 			sprintf(str+strlen(str), "%08X", (int16)(arg[0].imm + op_size));
-			sprintf(str+strlen(str), " ($%c%lx)", arg[0].imm & 0x8000 ? '-' : '+', (arg[0].imm & 0x8000 ? -arg[0].imm : arg[0].imm) & 0xffff);
+			sprintf(str+strlen(str), " ($%c%x)", arg[0].imm & 0x8000 ? '-' : '+', (arg[0].imm & 0x8000 ? -arg[0].imm : arg[0].imm) & 0xffff);
 		}
 		return;
 	}

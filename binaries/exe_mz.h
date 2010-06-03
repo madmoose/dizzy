@@ -4,11 +4,7 @@
 #include "../base/base.h"
 #include "binary.h"
 
-struct exe_mz_loader_t : public binary_loader_t {
-	std::string name() { return "DOS MZ executable"; }
-
-	void load(raw_istream_t &is, uint32 base);
-};
+#include <vector>
 
 struct exe_mz_header_t {      // DOS .EXE header
 	uint16 e_magic;                     // Magic number
@@ -34,6 +30,25 @@ struct exe_mz_header_t {      // DOS .EXE header
 	bool load(raw_istream_t &is);
 	bool save(raw_ostream_t &os);
 	void dump();
+};
+
+struct exe_mz_relocation_t {
+	uint16 ofs;
+	uint16 seg;
+};
+
+struct exe_mz_t : public binary_t {
+	~exe_mz_t();
+
+	std::string name() { return "DOS MZ executable"; }
+
+	void load(raw_istream_t &is);
+
+	exe_mz_header_t                  head;
+	std::vector<exe_mz_relocation_t> relocations;
+
+	uint32 image_size;
+	byte  *image;
 };
 
 #endif
