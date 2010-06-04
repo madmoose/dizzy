@@ -105,6 +105,12 @@ void exe_mz_analyzer_t::trace()
 
 			if (x86_16_is_block_stop_op(insn))
 				break;
+
+			// TODO: Remove gross hack :)
+			byte *p = cs_ip_p;
+			if (p[0] == 0xcd && p[1] == 0x21 &&
+			    p[-3] == 0xb8 && p[-2] == 0x01 && p[-1] == 0x4c)
+				break;
 		}
 	}
 }
