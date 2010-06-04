@@ -44,6 +44,9 @@ void exe_mz_analyzer_t::relocate()
 
 void exe_mz_analyzer_t::make_segments()
 {
+	// Make initial cs segment
+	segments.make_segment(base_seg + binary->head.e_cs);
+
 	// Make segments from relocations
 	for (uint i = 0; i != binary->relocations.size(); ++i)
 	{
