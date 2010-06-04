@@ -5,6 +5,7 @@
 #include "x86_analyzer_support.h"
 
 #include <queue>
+#include <map>
 
 class exe_mz_analyzer_t
 {
@@ -13,6 +14,11 @@ class exe_mz_analyzer_t
 
 	x86_16_seg_t               base_seg;
 	x86_16_attributed_memory_t memory;
+
+	typedef std::multimap<x86_16_address_t, x86_16_address_t> edge_map_t;
+
+	edge_map_t edge;
+	edge_map_t back_edge;
 
 	typedef std::priority_queue<x86_16_address_t> addr_queue_t;
 public:

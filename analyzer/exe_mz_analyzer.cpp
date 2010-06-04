@@ -121,6 +121,9 @@ void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &in
 	else
 		return;
 	
+	edge.insert(std::make_pair(addr, dst));
+	back_edge.insert(std::make_pair(dst, addr));
+
 	cs_ip_queue.push(dst);
 }
 
@@ -129,8 +132,6 @@ void exe_mz_analyzer_t::output(fmt_stream &fs) const
 	x86_16_address_t addr = x86_16_address_t(base_seg, 0);
 	uint32 ea = addr.ea();
 	uint32 end_ea = ea + binary->image_size;
-
-	bool last_was_data = false;
 
 	while (ea < end_ea)
 	{
