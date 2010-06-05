@@ -7,11 +7,26 @@ void x86_16_segments_t::make_segment(x86_16_seg_t seg)
 	segment.min_ofs = 0xffff;
 	segment.max_ofs = 0x0000;
 
-	segments.insert(segment);
+	segments_t::iterator i = std::lower_bound(segments.begin(), segments.end(), segment);
+
+	if (i->seg == segment.seg)
+		return;
+
+	segments.insert(i, segment);
 }
 
 void x86_16_segments_t::register_address(x86_16_address_t addr)
 {
+	segments_t::iterator i;
+	for (i = segments.begin(); i != segments.end(); ++i)
+		if (i->seg == addr.seg)
+			break;
+
+	if (i == segments.end())
+		return;
+
+	i->min_ofs = std::min(i->min_ofs, addr.ofs);
+	i->max_ofs = std::max(i->max_ofs, addr.ofs);
 }
 
 x86_16_address_t x86_16_segments_t::addr_at_ea(uint32 ea) const

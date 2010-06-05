@@ -5,7 +5,14 @@
 #include "../x86/x86_disasm.h"
 
 #include <list>
-#include <set>
+
+/*
+ * x86_16_address_t
+ * x86_16_segment_t
+ * x86_16_segments_t
+ * x86_16_attributed_memory_t
+ */
+
 
 typedef uint16 x86_16_seg_t;
 typedef uint16 x86_16_ofs_t;
@@ -46,7 +53,7 @@ bool operator<(const x86_16_segment_t &a, const x86_16_segment_t &b)
 
 class x86_16_segments_t
 {
-	typedef std::set<x86_16_segment_t> segments_t;
+	typedef std::list<x86_16_segment_t> segments_t;
 	segments_t segments;
 public:
 	void make_segment(x86_16_seg_t seg);
