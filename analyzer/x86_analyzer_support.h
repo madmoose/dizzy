@@ -32,9 +32,21 @@ bool operator<(const x86_16_address_t &a, const x86_16_address_t &b)
 	return a.ea() < b.ea();
 }
 
+struct x86_16_segment_t {
+	x86_16_seg_t seg;
+	uint16       min_ofs;
+	uint16       max_ofs;
+};
+
+inline
+bool operator<(const x86_16_segment_t &a, const x86_16_segment_t &b)
+{
+	return a.seg < b.seg;
+}
+
 class x86_16_segments_t
 {
-	typedef std::set<x86_16_seg_t> segments_t;
+	typedef std::set<x86_16_segment_t> segments_t;
 	segments_t segments;
 public:
 	void make_segment(x86_16_seg_t seg);

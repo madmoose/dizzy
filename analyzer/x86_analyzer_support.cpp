@@ -2,7 +2,12 @@
 
 void x86_16_segments_t::make_segment(x86_16_seg_t seg)
 {
-	segments.insert(seg);
+	x86_16_segment_t segment;
+	segment.seg = seg;
+	segment.min_ofs = 0xffff;
+	segment.max_ofs = 0x0000;
+
+	segments.insert(segment);
 }
 
 void x86_16_segments_t::register_address(x86_16_address_t addr)
@@ -14,7 +19,7 @@ x86_16_address_t x86_16_segments_t::addr_at_ea(uint32 ea) const
 	x86_16_seg_t seg = 0;
 	for (segments_t::const_iterator i = segments.begin(); i != segments.end(); ++i)
 	{
-		x86_16_seg_t i_seg = *i;
+		x86_16_seg_t i_seg = i->seg;
 		if (i_seg << 4 > ea)
 			break;
 		seg = i_seg;
@@ -27,7 +32,7 @@ void x86_16_segments_t::dump()
 {
 	puts("Segments:");
 	for (segments_t::const_iterator i = segments.begin(); i != segments.end(); ++i)
-		printf("%04x\n", *i);
+		printf("%04x\n", i->seg);
 	putchar('\n');
 }
 
