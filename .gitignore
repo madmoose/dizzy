@@ -1,7 +1,9 @@
 *.d
+*.dSYM
 *.o
 *.swp
 .DS_Store
 ._*
 a.out
+check_whitespace
 dizzy
