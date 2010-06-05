@@ -87,7 +87,7 @@ class x86_16_attributed_memory_t
 	};
 
 	typedef std::list<memory_block_t> memory_blocks_t;
-	
+
 	memory_blocks_t memory_blocks;
 	const memory_block_t *get_block(x86_16_address_t addr) const;
 	byte *attrib_ref_at(x86_16_address_t addr) const;

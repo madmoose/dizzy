@@ -1,6 +1,7 @@
-.DS_Store
-dizzy
-a.out
-*.o
 *.d
+*.o
 *.swp
+.DS_Store
+._*
+a.out
+dizzy

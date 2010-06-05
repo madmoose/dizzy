@@ -168,7 +168,7 @@ struct x86_insn_arg
 	{
 		byte   reg;
 		uint32 imm;
-		struct 
+		struct
 		{
 			uint16 seg;
 			uint16 ofs;
@@ -181,7 +181,7 @@ struct x86_insn_arg
 			uint16 disp;
 		};
 	};
-	
+
 	x86_insn_arg()
 		: kind(KN_NONE), size(SZ_UNK)
 	{}
@@ -199,7 +199,7 @@ struct x86_insn
 	e_ops    op_name;
 
 	x86_insn_arg arg[2];
-	
+
 	void to_str(char *str);
 	void dump(char *str);
 };

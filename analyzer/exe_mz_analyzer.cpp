@@ -74,7 +74,7 @@ void exe_mz_analyzer_t::trace()
 
 	init_cs_ip = x86_16_address_t(base_seg + binary->head.e_cs, binary->head.e_ip);
 	cs_ip_queue.push(init_cs_ip);
-	
+
 	// Add annotations
 	// cs_ip_queue.insert(_annotations.code.begin(); _annotations.code.end());
 
@@ -129,7 +129,7 @@ void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &in
 		dst = x86_16_address_t(addr.seg, addr.ofs + insn.op_size + (int16)insn.arg[0].imm);
 	else
 		return;
-	
+
 	edge.insert(std::make_pair(addr, dst));
 	back_edge.insert(std::make_pair(dst, addr));
 

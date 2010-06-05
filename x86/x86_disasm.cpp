@@ -691,7 +691,7 @@ class x86_decoder
 	byte op;
 	byte modrm;
 	bool has_modrm;
-	
+
 	x86_insn insn;
 
 	byte read_byte(const byte *&p)
@@ -781,7 +781,7 @@ x86_decoder::x86_decoder(const byte *p)
 
 	byte op = read_byte(p);
 	insn.op = op;
-	
+
 	if (DEBUG)
 		printf("(%02x)", op);
 
@@ -812,12 +812,12 @@ x86_decoder::x86_decoder(const byte *p)
 	} else {
 		modrm = read_byte(p);
 		has_modrm = true;
-		
+
 		byte reg = (modrm >> 3) & 0x07;
 
 		if (DEBUG)
 			printf("(reg=%d)", reg);
-		
+
 		insn.op_name = grp_ops[8*grp + reg].name;
 		arg_spec1 = grp_ops[8*grp + reg].arg1;
 		arg_spec2 = grp_ops[8*grp + reg].arg2;
@@ -840,13 +840,13 @@ void x86_decoder::do_modrm_rm(const byte *&p, const char *arg_spec, x86_insn_arg
 
 	byte mod = (modrm >> 6) & 0x03;
 	byte rm  = (modrm >> 0) & 0x07;
-	
+
 	arg.kind = KN_MEM;
 	arg.base_reg = r_none;
 	arg.idx_reg  = r_none;
 	arg.disp_size = SZ_UNK;
 	arg.disp     = 0;
-	
+
 	if (DEBUG)
 		printf("(mod=%d,rm=%d)", mod, rm);
 
@@ -895,7 +895,7 @@ void x86_decoder::do_modrm_rm(const byte *&p, const char *arg_spec, x86_insn_arg
 			arg.base_reg = r_bx;
 			break;
 	}
-	
+
 	if (mod == 1)
 	{
 		arg.disp_size = SZ_BYTE;
@@ -1002,7 +1002,7 @@ void x86_decoder::do_arg(const byte *&p, const char *arg_spec, x86_insn_arg &arg
 	{
 	case 'A': {
 		uint16 ofs = read_uint16(p);
-		uint16 seg = read_uint16(p); 
+		uint16 seg = read_uint16(p);
 		arg.kind = KN_ADR;
 		arg.size = SZ_DWORD;
 		arg.seg = seg;

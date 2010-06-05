@@ -75,7 +75,7 @@ const x86_16_attributed_memory_t::memory_block_t *x86_16_attributed_memory_t::ge
 
 	if (i == memory_blocks.end())
 		return 0;
-	
+
 	return &*i;
 }
 
@@ -97,7 +97,7 @@ byte *x86_16_attributed_memory_t::attrib_ref_at(x86_16_address_t addr) const
 
 	if (!b)
 		return 0;
-	
+
 	uint32 offset = addr.ea() - (b->seg << 4);
 
 	return b->attribs + offset;

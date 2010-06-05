@@ -59,7 +59,7 @@ bool exe_mz_header_t::load(raw_istream_t &is)
 			e_res2[i] = is.readle16();
 		e_lfanew = is.readle32();
 	}
-	
+
 	return true;
 }
 
@@ -90,7 +90,7 @@ bool exe_mz_header_t::save(raw_ostream_t &os)
 			os.writele16(e_res2[i]);
 		os.writele32(e_lfanew);
 	}
-	
+
 	return true;
 }
 
