@@ -164,3 +164,19 @@ bool x86_16_is_branch(const x86_insn &insn)
 
 	return false;
 }
+
+bool x86_16_branch_destination(const x86_insn &insn, x86_16_address_t addr, x86_16_address_t *dst)
+{
+	if (insn.arg[0].kind == KN_ADR)
+		*dst = x86_16_address_t(insn.arg[0].seg, insn.arg[0].ofs);
+	else
+	if (insn.arg[0].kind == KN_IMM && insn.arg[0].size == SZ_BYTE)
+		*dst = x86_16_address_t(addr.seg, addr.ofs + insn.op_size + (int8)insn.arg[0].imm);
+	else
+	if (insn.arg[0].kind == KN_IMM && insn.arg[0].size == SZ_WORD)
+		*dst = x86_16_address_t(addr.seg, addr.ofs + insn.op_size + (int16)insn.arg[0].imm);
+	else
+		return false;
+
+	return true;
+}

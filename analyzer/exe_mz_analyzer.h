@@ -7,24 +7,41 @@
 #include <queue>
 #include <map>
 
+struct exe_mz_annotation_t
+{
+	x86_16_address_t  addr;
+	const char       *name;
+};
+
+inline
+bool operator<(const exe_mz_annotation_t &a, const exe_mz_annotation_t &b)
+{
+	return a.addr < b.addr;
+}
+
+typedef std::vector<exe_mz_annotation_t> exe_mz_annotations_t;
+
 class exe_mz_analyzer_t
 {
+	typedef std::multimap<x86_16_address_t, x86_16_address_t> edge_map_t;
+	typedef std::priority_queue<x86_16_address_t> addr_queue_t;
+
 	exe_mz_t                  *binary;
 	x86_16_segments_t          segments;
 
 	x86_16_seg_t               base_seg;
 	x86_16_attributed_memory_t memory;
 
-	typedef std::multimap<x86_16_address_t, x86_16_address_t> edge_map_t;
+	edge_map_t                 edge;
+	edge_map_t                 back_edge;
 
-	edge_map_t edge;
-	edge_map_t back_edge;
-
-	typedef std::priority_queue<x86_16_address_t> addr_queue_t;
+	exe_mz_annotations_t       annotations;
 public:
 	void init(exe_mz_t *abinary);
+	void load_annotations(const char *fn);
 	void analyze();
 	void output(fmt_stream &fs) const;
+	const char *get_annotation_name(x86_16_address_t addr) const;
 private:
 	void load();
 	void relocate();

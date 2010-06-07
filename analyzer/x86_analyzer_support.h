@@ -105,5 +105,6 @@ public:
 
 bool x86_16_is_block_stop_op(const x86_insn &insn);
 bool x86_16_is_branch(const x86_insn &insn);
+bool x86_16_branch_destination(const x86_insn &insn, x86_16_address_t addr, x86_16_address_t *dst);
 
 #endif

@@ -22,6 +22,7 @@ int main(int argc, char **argv)
 
 	exe_mz_analyzer_t analyzer;
 	analyzer.init(dynamic_cast<exe_mz_t*>(binary));
+	analyzer.load_annotations("zak.exe.names.txt");
 
 	analyzer.analyze();
 

@@ -2,11 +2,38 @@
 
 #include <queue>
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 void exe_mz_analyzer_t::init(exe_mz_t *abinary)
 {
 	binary = abinary;
+}
 
-	// TODO: read annotations
+void exe_mz_analyzer_t::load_annotations(const char *fn)
+{
+	std::ifstream ifs(fn);
+	std::string line;
+	while (std::getline(ifs, line))
+	{
+		std::istringstream ss(line);
+
+		char t, c;
+		uint16 seg, ofs;
+		std::string name;
+
+		ss >> t >> std::hex >> seg >> c >> ofs >> name;
+		printf("%c %04x:%04x %s\n", t, seg, ofs, name.c_str());
+
+		exe_mz_annotation_t a;
+		a.addr = x86_16_address_t(seg, ofs);
+		a.name = strdup(name.c_str());
+
+		annotations.push_back(a);
+	}
+
+	std::sort(annotations.begin(), annotations.end());
 }
 
 void exe_mz_analyzer_t::analyze()
@@ -76,7 +103,8 @@ void exe_mz_analyzer_t::trace()
 	cs_ip_queue.push(init_cs_ip);
 
 	// Add annotations
-	// cs_ip_queue.insert(_annotations.code.begin(); _annotations.code.end());
+	for (exe_mz_annotations_t::const_iterator i = annotations.begin(); i != annotations.end(); ++i)
+		cs_ip_queue.push(i->addr);
 
 	while (!cs_ip_queue.empty())
 	{
@@ -119,15 +147,7 @@ void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &in
 {
 	x86_16_address_t dst;
 
-	if (insn.arg[0].kind == KN_ADR)
-		dst = x86_16_address_t(insn.arg[0].seg, insn.arg[0].ofs);
-	else
-	if (insn.arg[0].kind == KN_IMM && insn.arg[0].size == SZ_BYTE)
-		dst = x86_16_address_t(addr.seg, addr.ofs + insn.op_size + (int8)insn.arg[0].imm);
-	else
-	if (insn.arg[0].kind == KN_IMM && insn.arg[0].size == SZ_WORD)
-		dst = x86_16_address_t(addr.seg, addr.ofs + insn.op_size + (int16)insn.arg[0].imm);
-	else
+	if (!x86_16_branch_destination(insn, addr, &dst))
 		return;
 
 	edge.insert(std::make_pair(addr, dst));
@@ -149,12 +169,38 @@ void exe_mz_analyzer_t::output(fmt_stream &fs) const
 
 		fs.set_line_id("%04x:%04x ", addr.seg, addr.ofs);
 
+		exe_mz_annotation_t key;
+		key.addr = addr;
+		std::pair<exe_mz_annotations_t::const_iterator, exe_mz_annotations_t::const_iterator> result =
+			std::equal_range(annotations.begin(), annotations.end(), key);
+
+		for (exe_mz_annotations_t::const_iterator i = result.first; i != result.second; ++i)
+		{
+
+			fs.puts("\n****** FUNCTION ****** ");
+			fs.printf("\nproc %s\n\n", i->name);
+		}
+
 		if (memory.is_code(addr))
 		{
 			x86_insn insn = x86_decode(p);
-			char dline[64];
-			insn.to_str(dline);
-			fs.puts(dline);
+
+			x86_16_address_t dst;
+			const char *name;
+			if (insn.op_name == op_call &&
+			    x86_16_branch_destination(insn, addr, &dst) &&
+			    (name = get_annotation_name(dst)))
+			{
+				fs.printf("call %s\n", name);
+			}
+			else
+			{
+				char dline[64];
+				insn.to_str(dline);
+				fs.puts(dline);
+			}
+			if (insn.op_name == op_ret)
+				fs.printf("\n;-------------------------------------\n\n");
 			ea += insn.op_size;
 		}
 		else
@@ -195,4 +241,17 @@ void exe_mz_analyzer_t::output(fmt_stream &fs) const
 			ea += cnt;
 		}
 	}
+}
+
+const char *exe_mz_analyzer_t::get_annotation_name(x86_16_address_t addr) const
+{
+		exe_mz_annotation_t key;
+		key.addr = addr;
+		std::pair<exe_mz_annotations_t::const_iterator, exe_mz_annotations_t::const_iterator> result =
+			std::equal_range(annotations.begin(), annotations.end(), key);
+
+		if (result.first == result.second)
+			return 0;
+
+		return result.first->name;
 }
