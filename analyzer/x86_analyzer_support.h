@@ -67,9 +67,9 @@ public:
 class x86_16_attributed_memory_t
 {
 	enum {
-		X64_16_ATTR_CODE = 1,
-		X64_16_ATTR_DATA = 2,
-		X64_16_ATTR_CONT = 4
+		X86_16_ATTR_OP   = 1,
+		X86_16_ATTR_CONT = 2,
+		X86_16_ATTR_DATA = 4
 	};
 	struct memory_block_t
 	{
@@ -98,9 +98,11 @@ public:
 	byte *ref_at(x86_16_address_t addr) const;
 
 	void mark_as_code(x86_16_address_t addr, uint len);
+	void mark_as_cont(x86_16_address_t addr);
 
 	bool is_unmarked(x86_16_address_t addr, uint len = 1) const;
 	bool is_code(x86_16_address_t addr) const;
+	bool is_cont(x86_16_address_t addr) const;
 };
 
 bool x86_16_is_block_stop_op(const x86_insn &insn);

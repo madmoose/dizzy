@@ -114,6 +114,8 @@ void exe_mz_analyzer_t::trace()
 		//printf("%04x:%04x\n", cs_ip.seg, cs_ip.ofs);
 		segments.register_address(cs_ip);
 
+		bool is_continuation = false;
+
 		for (;;)
 		{
 			byte *cs_ip_p = memory.ref_at(cs_ip);
@@ -123,22 +125,26 @@ void exe_mz_analyzer_t::trace()
 
 			x86_insn insn = x86_decode(cs_ip_p);
 
-			if (!memory.is_unmarked(cs_ip, insn.op_size)) break;
+			//if (!memory.is_unmarked(cs_ip, insn.op_size)) break;
 			memory.mark_as_code(cs_ip, insn.op_size);
+
+			if (is_continuation)
+				memory.mark_as_cont(cs_ip);
+			is_continuation = true;
 
 			if (x86_16_is_branch(insn))
 				analyze_branch(cs_ip, insn, cs_ip_queue);
 
-			cs_ip.ofs += insn.op_size;
-
-			if (x86_16_is_block_stop_op(insn))
-				break;
-
-			// TODO: Remove gross hack :)
 			byte *p = cs_ip_p;
-			if (p[0] == 0xcd && p[1] == 0x21 &&
-			    p[-3] == 0xb8 && p[-2] == 0x01 && p[-1] == 0x4c)
+			// TODO: Remove gross hack :)
+			bool block_stop = (p[0] == 0xcd && p[1] == 0x21 &&
+			                   p[-3] == 0xb8 && p[-2] == 0x01 && p[-1] == 0x4c);
+			block_stop = block_stop || x86_16_is_block_stop_op(insn);
+
+			if (block_stop)
 				break;
+
+			cs_ip.ofs += insn.op_size;
 		}
 	}
 }
@@ -174,16 +180,21 @@ void exe_mz_analyzer_t::output(fmt_stream &fs) const
 		std::pair<exe_mz_annotations_t::const_iterator, exe_mz_annotations_t::const_iterator> result =
 			std::equal_range(annotations.begin(), annotations.end(), key);
 
-		for (exe_mz_annotations_t::const_iterator i = result.first; i != result.second; ++i)
-		{
-
-			fs.puts("\n****** FUNCTION ****** ");
-			fs.printf("\nproc %s\n\n", i->name);
-		}
 
 		if (memory.is_code(addr))
 		{
+			if (!memory.is_cont(addr))
+				fs.printf("\n; ---------------------------------------------------------------------------\n\n");
+			if (result.first != result.second)
+			{
+
+				fs.puts("\n****** FUNCTION ****** ");
+				fs.printf("\nproc %s\n\n", result.first->name);
+			}
+
 			x86_insn insn = x86_decode(p);
+
+			fs.printf("                ");
 
 			x86_16_address_t dst;
 			const char *name;
@@ -199,8 +210,7 @@ void exe_mz_analyzer_t::output(fmt_stream &fs) const
 				insn.to_str(dline);
 				fs.puts(dline);
 			}
-			if (insn.op_name == op_ret)
-				fs.printf("\n;-------------------------------------\n\n");
+
 			ea += insn.op_size;
 		}
 		else

@@ -106,9 +106,15 @@ byte *x86_16_attributed_memory_t::attrib_ref_at(x86_16_address_t addr) const
 void x86_16_attributed_memory_t::mark_as_code(x86_16_address_t addr, uint len)
 {
 	byte *p = attrib_ref_at(addr);
-	*p++ = X64_16_ATTR_CODE;
+	*p++ |= X86_16_ATTR_OP;
 	while (--len)
-		*p++ = X64_16_ATTR_CONT;
+		*p++ |= X86_16_ATTR_CONT;
+}
+
+void x86_16_attributed_memory_t::mark_as_cont(x86_16_address_t addr)
+{
+	byte *p = attrib_ref_at(addr);
+	*p |= X86_16_ATTR_CONT;
 }
 
 bool x86_16_attributed_memory_t::is_unmarked(x86_16_address_t addr, uint len) const
@@ -124,7 +130,13 @@ bool x86_16_attributed_memory_t::is_unmarked(x86_16_address_t addr, uint len) co
 bool x86_16_attributed_memory_t::is_code(x86_16_address_t addr) const
 {
 	byte *p = attrib_ref_at(addr);
-	return (*p) & X64_16_ATTR_CODE;
+	return (*p) & (X86_16_ATTR_OP | X86_16_ATTR_CONT);
+}
+
+bool x86_16_attributed_memory_t::is_cont(x86_16_address_t addr) const
+{
+	byte *p = attrib_ref_at(addr);
+	return (*p) & X86_16_ATTR_CONT;
 }
 
 bool x86_16_is_block_stop_op(const x86_insn &insn)
