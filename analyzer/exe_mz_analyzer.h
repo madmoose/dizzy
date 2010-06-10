@@ -4,8 +4,9 @@
 #include "../binaries/exe_mz.h"
 #include "x86_analyzer_support.h"
 
-#include <queue>
 #include <map>
+#include <queue>
+#include <set>
 
 struct exe_mz_annotation_t
 {
@@ -24,7 +25,8 @@ typedef std::vector<exe_mz_annotation_t> exe_mz_annotations_t;
 class exe_mz_analyzer_t
 {
 	typedef std::multimap<x86_16_address_t, x86_16_address_t> edge_map_t;
-	typedef std::priority_queue<x86_16_address_t> addr_queue_t;
+	typedef std::priority_queue<x86_16_address_t>             addr_queue_t;
+	typedef std::set<x86_16_address_t>                        addr_set_t;
 
 	exe_mz_t                  *binary;
 	x86_16_segments_t          segments;
@@ -34,6 +36,7 @@ class exe_mz_analyzer_t
 
 	edge_map_t                 edge;
 	edge_map_t                 back_edge;
+	addr_set_t                 call_dsts;
 
 	exe_mz_annotations_t       annotations;
 public:
@@ -48,6 +51,7 @@ private:
 	void make_segments();
 	void trace();
 	void analyze_branch(x86_16_address_t addr, const x86_insn &insn, addr_queue_t &cs_ip_queue);
+	void analyze_procs();
 };
 
 #endif

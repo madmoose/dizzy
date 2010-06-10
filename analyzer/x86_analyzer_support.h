@@ -67,9 +67,11 @@ public:
 class x86_16_attributed_memory_t
 {
 	enum {
-		X86_16_ATTR_OP   = 1,
-		X86_16_ATTR_CONT = 2,
-		X86_16_ATTR_DATA = 4
+		X86_16_ATTR_OP   = 1, // Marks a byte that starts an opcde
+		X86_16_ATTR_CONT = 2, // Marks all subsequent bytes that make up an opcde
+		X86_16_ATTR_FLOW = 4, // Marks all ops following a non-block stop op
+		X86_16_ATTR_DATA = 8,
+		X86_16_ATTR_PROC = 16
 	};
 	struct memory_block_t
 	{
@@ -98,11 +100,14 @@ public:
 	byte *ref_at(x86_16_address_t addr) const;
 
 	void mark_as_code(x86_16_address_t addr, uint len);
-	void mark_as_cont(x86_16_address_t addr);
+	void mark_as_flow(x86_16_address_t addr);
+	void mark_as_proc(x86_16_address_t addr);
 
 	bool is_unmarked(x86_16_address_t addr, uint len = 1) const;
 	bool is_code(x86_16_address_t addr) const;
 	bool is_cont(x86_16_address_t addr) const;
+	bool is_flow(x86_16_address_t addr) const;
+	bool is_proc(x86_16_address_t addr) const;
 };
 
 bool x86_16_is_block_stop_op(const x86_insn &insn);

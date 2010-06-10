@@ -13,6 +13,7 @@ void exe_mz_analyzer_t::init(exe_mz_t *abinary)
 
 void exe_mz_analyzer_t::load_annotations(const char *fn)
 {
+	puts("\nAnnotations:");
 	std::ifstream ifs(fn);
 	std::string line;
 	while (std::getline(ifs, line))
@@ -32,6 +33,7 @@ void exe_mz_analyzer_t::load_annotations(const char *fn)
 
 		annotations.push_back(a);
 	}
+	putchar('\n');
 
 	std::sort(annotations.begin(), annotations.end());
 }
@@ -42,6 +44,7 @@ void exe_mz_analyzer_t::analyze()
 	load();
 	make_segments();
 	trace();
+	analyze_procs();
 }
 
 void exe_mz_analyzer_t::load()
@@ -104,7 +107,10 @@ void exe_mz_analyzer_t::trace()
 
 	// Add annotations
 	for (exe_mz_annotations_t::const_iterator i = annotations.begin(); i != annotations.end(); ++i)
+	{
 		cs_ip_queue.push(i->addr);
+		memory.mark_as_proc(i->addr);
+	}
 
 	while (!cs_ip_queue.empty())
 	{
@@ -121,15 +127,16 @@ void exe_mz_analyzer_t::trace()
 			byte *cs_ip_p = memory.ref_at(cs_ip);
 
 			if (!cs_ip_p) break;
-			if (!memory.is_unmarked(cs_ip)) break;
+
+			if (is_continuation)
+				memory.mark_as_flow(cs_ip);
+			if (memory.is_code(cs_ip)) break;
 
 			x86_insn insn = x86_decode(cs_ip_p);
 
 			//if (!memory.is_unmarked(cs_ip, insn.op_size)) break;
 			memory.mark_as_code(cs_ip, insn.op_size);
 
-			if (is_continuation)
-				memory.mark_as_cont(cs_ip);
 			is_continuation = true;
 
 			if (x86_16_is_branch(insn))
@@ -149,6 +156,16 @@ void exe_mz_analyzer_t::trace()
 	}
 }
 
+void exe_mz_analyzer_t::analyze_procs()
+{
+	for (addr_set_t::const_iterator i = call_dsts.begin(); i != call_dsts.end(); ++i)
+	{
+		x86_16_address_t addr = *i;
+
+		memory.mark_as_proc(addr);
+	}
+}
+
 void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &insn, exe_mz_analyzer_t::addr_queue_t &cs_ip_queue)
 {
 	x86_16_address_t dst;
@@ -158,6 +175,9 @@ void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &in
 
 	edge.insert(std::make_pair(addr, dst));
 	back_edge.insert(std::make_pair(dst, addr));
+
+	if (insn.op_name == op_call)
+		call_dsts.insert(dst);
 
 	cs_ip_queue.push(dst);
 }
@@ -180,21 +200,23 @@ void exe_mz_analyzer_t::output(fmt_stream &fs) const
 		std::pair<exe_mz_annotations_t::const_iterator, exe_mz_annotations_t::const_iterator> result =
 			std::equal_range(annotations.begin(), annotations.end(), key);
 
-
 		if (memory.is_code(addr))
 		{
-			if (!memory.is_cont(addr))
-				fs.printf("\n; ---------------------------------------------------------------------------\n\n");
-			if (result.first != result.second)
+			if (memory.is_proc(addr))
 			{
-
-				fs.puts("\n****** FUNCTION ****** ");
-				fs.printf("\nproc %s\n\n", result.first->name);
+				if (result.first != result.second)
+					fs.printf("\n%s", result.first->name);
+				else
+					fs.printf("\nsub_%x", addr.ea());
+				fs.set_col(27);
+				fs.puts("proc");
 			}
+			else if (!memory.is_flow(addr))
+				fs.printf("; ---------------------------------------------------------------------------\n\n");
 
 			x86_insn insn = x86_decode(p);
 
-			fs.printf("                ");
+			fs.set_col(27);
 
 			x86_16_address_t dst;
 			const char *name;
