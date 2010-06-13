@@ -50,10 +50,10 @@ void exe_mz_analyzer_t::analyze()
 void exe_mz_analyzer_t::load()
 {
 	base_seg = 0x1000;
-	memory.allocate(base_seg, binary->image_size);
+	memory.allocate(base_seg << 4, binary->image_size);
 
 	// Load binary into memory
-	byte *dst = memory.ref_at(x86_16_address_t(base_seg, 0));
+	byte *dst = memory.ref_at(base_seg << 4);
 	memcpy(dst, binary->image, binary->image_size);
 
 	relocate();
@@ -65,10 +65,11 @@ void exe_mz_analyzer_t::relocate()
 	{
 		exe_mz_relocation_t reloc = binary->relocations[i];
 
-		x86_16_address_t addr(base_seg + reloc.seg, reloc.ofs);
+		uint32 ea = x86_16_address_t(base_seg + reloc.seg, reloc.ofs).ea();
+		byte *p = memory.ref_at(ea);
 
-		uint16 orig_seg = readle16(memory.ref_at(addr));
-		writele16(memory.ref_at(addr), orig_seg + base_seg);
+		uint16 orig_seg = readle16(p);
+		writele16(p, orig_seg + base_seg);
 	}
 }
 
@@ -109,7 +110,7 @@ void exe_mz_analyzer_t::trace()
 	for (exe_mz_annotations_t::const_iterator i = annotations.begin(); i != annotations.end(); ++i)
 	{
 		cs_ip_queue.push(i->addr);
-		memory.mark_as_proc(i->addr);
+		memory.mark_as_proc(i->addr.ea());
 	}
 
 	while (!cs_ip_queue.empty())
@@ -124,18 +125,19 @@ void exe_mz_analyzer_t::trace()
 
 		for (;;)
 		{
-			byte *cs_ip_p = memory.ref_at(cs_ip);
+			uint32 cs_ip_ea = cs_ip.ea();
+			byte *cs_ip_p = memory.ref_at(cs_ip_ea);
 
 			if (!cs_ip_p) break;
 
 			if (is_continuation)
-				memory.mark_as_flow(cs_ip);
-			if (memory.is_code(cs_ip)) break;
+				memory.mark_as_flow(cs_ip_ea);
+			if (memory.is_code(cs_ip_ea)) break;
 
 			x86_insn insn = x86_decode(cs_ip_p);
 
 			//if (!memory.is_unmarked(cs_ip, insn.op_size)) break;
-			memory.mark_as_code(cs_ip, insn.op_size);
+			memory.mark_as_code(cs_ip_ea, insn.op_size);
 
 			is_continuation = true;
 
@@ -159,11 +161,7 @@ void exe_mz_analyzer_t::trace()
 void exe_mz_analyzer_t::analyze_procs()
 {
 	for (addr_set_t::const_iterator i = call_dsts.begin(); i != call_dsts.end(); ++i)
-	{
-		x86_16_address_t addr = *i;
-
-		memory.mark_as_proc(addr);
-	}
+		memory.mark_as_proc(i->ea());
 }
 
 void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &insn, exe_mz_analyzer_t::addr_queue_t &cs_ip_queue)
@@ -190,9 +188,9 @@ void exe_mz_analyzer_t::output(fmt_stream &fs) const
 
 	while (ea < end_ea)
 	{
-		addr = segments.addr_at_ea(ea);
-		byte *p = memory.ref_at(addr);
+		byte *p = memory.ref_at(ea);
 
+		addr = segments.addr_at_ea(ea);
 		fs.set_line_id("%04x:%04x ", addr.seg, addr.ofs);
 
 		exe_mz_annotation_t key;
@@ -200,18 +198,18 @@ void exe_mz_analyzer_t::output(fmt_stream &fs) const
 		std::pair<exe_mz_annotations_t::const_iterator, exe_mz_annotations_t::const_iterator> result =
 			std::equal_range(annotations.begin(), annotations.end(), key);
 
-		if (memory.is_code(addr))
+		if (memory.is_code(ea))
 		{
-			if (memory.is_proc(addr))
+			if (memory.is_proc(ea))
 			{
 				if (result.first != result.second)
 					fs.printf("\n%s", result.first->name);
 				else
-					fs.printf("\nsub_%x", addr.ea());
+					fs.printf("\nsub_%x", ea);
 				fs.set_col(27);
 				fs.puts("proc");
 			}
-			else if (!memory.is_flow(addr))
+			else if (!memory.is_flow(ea))
 				fs.printf("; ---------------------------------------------------------------------------\n\n");
 
 			x86_insn insn = x86_decode(p);
@@ -243,8 +241,7 @@ void exe_mz_analyzer_t::output(fmt_stream &fs) const
 
 			for (cnt = 0; cnt < rem && ea+cnt < end_ea; ++cnt)
 			{
-				x86_16_address_t a = segments.addr_at_ea(ea+cnt);
-				if (!memory.ref_at(a) || memory.is_code(a))
+				if (!memory.ref_at(ea+cnt) || memory.is_code(ea+cnt))
 					break;
 			}
 

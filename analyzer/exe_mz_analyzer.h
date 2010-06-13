@@ -1,8 +1,9 @@
 #ifndef EXE_MZ_ANALYZER_H
 #define EXE_MZ_ANALYZER_H
 
-#include "../binaries/exe_mz.h"
-#include "x86_analyzer_support.h"
+#include "binaries/exe_mz.h"
+#include "support/attributed_memory.h"
+#include "support/x86_analyzer_support.h"
 
 #include <map>
 #include <queue>
@@ -32,7 +33,7 @@ class exe_mz_analyzer_t
 	x86_16_segments_t          segments;
 
 	x86_16_seg_t               base_seg;
-	x86_16_attributed_memory_t memory;
+	 attributed_memory_t       memory;
 
 	edge_map_t                 edge;
 	edge_map_t                 back_edge;
