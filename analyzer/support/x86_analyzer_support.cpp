@@ -9,7 +9,7 @@ void x86_16_segments_t::make_segment(x86_16_seg_t seg)
 
 	segments_t::iterator i = std::lower_bound(segments.begin(), segments.end(), segment);
 
-	if (i->seg == segment.seg)
+	if (i != segments.end() && i->seg == segment.seg)
 		return;
 
 	segments.insert(i, segment);
@@ -47,7 +47,7 @@ void x86_16_segments_t::dump()
 {
 	puts("Segments:");
 	for (segments_t::const_iterator i = segments.begin(); i != segments.end(); ++i)
-		printf("%04x\n", i->seg);
+		printf("%04x: %06x-%06x\n", i->seg, i->min_ofs, i->max_ofs);
 	putchar('\n');
 }
 

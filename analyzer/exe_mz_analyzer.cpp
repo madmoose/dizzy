@@ -95,8 +95,6 @@ void exe_mz_analyzer_t::make_segments()
 
 	// Make stack segment
 	segments.make_segment(base_seg + binary->head.e_ss);
-
-	segments.dump();
 }
 
 void exe_mz_analyzer_t::trace()
@@ -121,8 +119,6 @@ void exe_mz_analyzer_t::trace()
 		cs_ip_queue.pop();
 
 		//printf("%04x:%04x\n", cs_ip.seg, cs_ip.ofs);
-		segments.register_address(cs_ip);
-
 		bool is_continuation = false;
 
 		for (;;)
@@ -140,6 +136,8 @@ void exe_mz_analyzer_t::trace()
 
 			//if (!memory.is_unmarked(cs_ip_ea, insn.op_size)) break;
 			memory.mark_as_code(cs_ip_ea, insn.op_size);
+			segments.register_address(cs_ip);
+			segments.register_address(x86_16_address_t(cs_ip.seg, cs_ip.ofs + insn.op_size - 1));
 
 			is_continuation = true;
 
@@ -252,6 +250,8 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 
 	x86_16_address_t cur_proc_addr;
 	procs_t::iterator cur_proc_i = procs.end();
+
+	segments.dump();
 
 	while (ea < end_ea)
 	{
