@@ -2,6 +2,7 @@
 
 #include <queue>
 
+#include <cassert>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -44,6 +45,7 @@ void exe_mz_analyzer_t::analyze()
 	load();
 	make_segments();
 	trace();
+	analyze_blocks();
 	analyze_procs();
 }
 
@@ -136,7 +138,7 @@ void exe_mz_analyzer_t::trace()
 
 			x86_insn insn = x86_decode(cs_ip_p);
 
-			//if (!memory.is_unmarked(cs_ip, insn.op_size)) break;
+			//if (!memory.is_unmarked(cs_ip_ea, insn.op_size)) break;
 			memory.mark_as_code(cs_ip_ea, insn.op_size);
 
 			is_continuation = true;
@@ -158,10 +160,72 @@ void exe_mz_analyzer_t::trace()
 	}
 }
 
+void exe_mz_analyzer_t::analyze_blocks()
+{
+	uint32 begin_ea = base_seg << 4;
+	uint32 end_ea;
+	uint32 image_end = begin_ea + binary->image_size;
+
+	for (;;)
+	{
+		// Find beginning of block
+		while (begin_ea != image_end && !memory.is_op(begin_ea))
+			++begin_ea;
+		if (begin_ea == image_end)
+			break;
+		assert(!memory.is_flow(begin_ea));
+
+		// Find end of block
+		end_ea = begin_ea + 1;
+		while (end_ea != image_end && ((memory.is_op(end_ea) && memory.is_flow(end_ea)) || memory.is_cont(end_ea)))
+			++end_ea;
+
+		// Back up and find last op before end_ea
+		uint32 last_op = end_ea;
+		while (!memory.is_op(--last_op))
+			;
+		x86_insn insn = x86_decode(memory.ref_at(last_op));
+
+		// Record block information
+		block_t block;
+		block.begin = begin_ea;
+		block.end   = end_ea;
+		block.terminator_op_name = insn.op_name;
+
+		blocks.push_back(block);
+
+		if (end_ea == image_end)
+			break;
+		begin_ea = end_ea;
+	}
+}
+
 void exe_mz_analyzer_t::analyze_procs()
 {
 	for (addr_set_t::const_iterator i = call_dsts.begin(); i != call_dsts.end(); ++i)
+	{
 		memory.mark_as_proc(i->ea());
+
+		proc_t proc;
+		proc.begin = i->ea();
+		procs.push_back(proc);
+	}
+
+	for (procs_t::iterator pi = procs.begin(); pi != procs.end(); ++pi)
+	{
+		procs_t::iterator next_pi = pi + 1;
+		uint32 next_proc_ea = next_pi != procs.end() ? next_pi->begin : ((base_seg << 4) + binary->image_size);
+
+		blocks_t::iterator bi = blocks.get_block(pi->begin);
+		while (bi != blocks.end() && bi->begin < next_proc_ea && bi->terminator_op_name != op_ret)
+			++bi;
+
+		if (next_proc_ea <= bi->begin)
+			--bi;
+
+		if (bi != blocks.end())
+			pi->end = bi->end;
+	}
 }
 
 void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &insn, exe_mz_analyzer_t::addr_queue_t &cs_ip_queue)
@@ -180,11 +244,14 @@ void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &in
 	cs_ip_queue.push(dst);
 }
 
-void exe_mz_analyzer_t::output(fmt_stream &fs) const
+void exe_mz_analyzer_t::output(fmt_stream &fs)
 {
 	x86_16_address_t addr = x86_16_address_t(base_seg, 0);
 	uint32 ea = addr.ea();
 	uint32 end_ea = ea + binary->image_size;
+
+	x86_16_address_t cur_proc_addr;
+	procs_t::iterator cur_proc_i = procs.end();
 
 	while (ea < end_ea)
 	{
@@ -193,21 +260,20 @@ void exe_mz_analyzer_t::output(fmt_stream &fs) const
 		addr = segments.addr_at_ea(ea);
 		fs.set_line_id("%04x:%04x ", addr.seg, addr.ofs);
 
-		exe_mz_annotation_t key;
-		key.addr = addr;
-		std::pair<exe_mz_annotations_t::const_iterator, exe_mz_annotations_t::const_iterator> result =
-			std::equal_range(annotations.begin(), annotations.end(), key);
-
 		if (memory.is_code(ea))
 		{
 			if (memory.is_proc(ea))
 			{
-				if (result.first != result.second)
-					fs.printf("\n%s", result.first->name);
+				const char *name = get_annotation_name(addr);
+				if (name)
+					fs.printf("\n%s", name);
 				else
 					fs.printf("\nsub_%x", ea);
 				fs.set_col(27);
 				fs.puts("proc");
+
+				cur_proc_i = procs.get_proc(ea);
+				cur_proc_addr = addr;
 			}
 			else if (!memory.is_flow(ea))
 				fs.printf("; ---------------------------------------------------------------------------\n\n");
@@ -232,6 +298,19 @@ void exe_mz_analyzer_t::output(fmt_stream &fs) const
 			}
 
 			ea += insn.op_size;
+
+			if (cur_proc_i != procs.end() && cur_proc_i->end == ea)
+			{
+				const char *name = get_annotation_name(cur_proc_addr);
+				if (name)
+					fs.printf("%s", name);
+				else
+					fs.printf("sub_%x", cur_proc_i->begin);
+				fs.set_col(27);
+				fs.puts("endp");
+
+				cur_proc_i = procs.end();
+			}
 		}
 		else
 		{

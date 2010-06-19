@@ -46,6 +46,7 @@ public:
 
 	bool is_unmarked(uint32 ea, uint len = 1) const;
 	bool is_code(uint32 ea) const;
+	bool is_op(uint32 ea) const;
 	bool is_cont(uint32 ea) const;
 	bool is_flow(uint32 ea) const;
 	bool is_proc(uint32 ea) const;

@@ -84,6 +84,12 @@ bool attributed_memory_t::is_code(uint32 ea) const
 	return (*p) & (ATTR_OP | ATTR_CONT);
 }
 
+bool attributed_memory_t::is_op(uint32 ea) const
+{
+	byte *p = attrib_ref_at(ea);
+	return (*p) & ATTR_OP;
+}
+
 bool attributed_memory_t::is_cont(uint32 ea) const
 {
 	byte *p = attrib_ref_at(ea);
