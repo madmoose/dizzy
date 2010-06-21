@@ -266,10 +266,11 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 			{
 				const char *name = get_annotation_name(addr);
 				if (name)
-					fs.printf("\n%s", name);
+					fs.printf("\n%s ", name);
 				else
-					fs.printf("\nsub_%x", ea);
-				fs.set_col(27);
+					fs.printf("\nsub_%x ", ea);
+				if (fs.col() < 27)
+					fs.set_col(27);
 				fs.puts("proc");
 
 				cur_proc_i = procs.get_proc(ea);
@@ -303,10 +304,11 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 			{
 				const char *name = get_annotation_name(cur_proc_addr);
 				if (name)
-					fs.printf("%s", name);
+					fs.printf("%s ", name);
 				else
-					fs.printf("sub_%x", cur_proc_i->begin);
-				fs.set_col(27);
+					fs.printf("sub_%x ", cur_proc_i->begin);
+				if (fs.col() < 27)
+					fs.set_col(27);
 				fs.puts("endp");
 
 				cur_proc_i = procs.end();
