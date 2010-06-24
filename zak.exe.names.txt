@@ -1,4 +1,5 @@
 f 1000:4ab3 getScriptByte
+f 1000:4ac5 executeScriptOp
 f 1000:4b37 skipScriptWord
 f 1000:4b3e skipScriptByte
 f 1000:4e3a getVar
