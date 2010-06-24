@@ -2,7 +2,6 @@
 #define X86_ANALYZER_SUPPORT_H
 
 #include "base/base.h"
-#include "x86/x86_disasm.h"
 
 #include <list>
 
@@ -13,6 +12,7 @@
  * x86_16_attributed_memory_t
  */
 
+struct x86_insn;
 
 typedef uint16 x86_16_seg_t;
 typedef uint16 x86_16_ofs_t;

@@ -2,7 +2,6 @@
 #define PROCS_H
 
 #include "base/base.h"
-#include "x86_analyzer_support.h"
 
 #include <vector>
 
@@ -10,6 +9,12 @@ struct proc_t
 {
 	uint32 begin;
 	uint32 end;
+
+	const char *name;
+
+	proc_t()
+		: begin(0), end(0), name(0)
+	{}
 
 	bool contains(uint32 ea) const {
 		return begin <= ea && ea < end;

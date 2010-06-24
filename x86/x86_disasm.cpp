@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "analyzer/support/x86_name_generator.h"
+
 const char *str_ops[] = {
 	"<illegal>",
 	"aaa",
@@ -584,7 +586,7 @@ void x86_insn::dump(char *str)
 	arg[1].dump(str+strlen(str));
 }
 
-void x86_insn::to_str(char *str)
+void x86_insn::to_str(char *str, x86_16_address_t addr, x86_16_name_generator_t *name_generator)
 {
 	str[0] = '\0';
 
@@ -642,6 +644,15 @@ void x86_insn::to_str(char *str)
 
 	if (is_branch(op_name) && arg[0].kind == KN_IMM)
 	{
+		x86_16_address_t dst;
+
+		const char *name = 0;
+		if (name_generator && x86_16_branch_destination(*this, addr, &dst))
+			name = name_generator->get_proc_name(dst);
+
+		if (name)
+			sprintf(str+strlen(str), "%s", name);
+		else
 		if (arg[0].size == SZ_BYTE)
 		{
 			sprintf(str+strlen(str), "%08X", (int8)(arg[0].imm + op_size));

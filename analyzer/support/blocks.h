@@ -3,6 +3,7 @@
 
 #include "base/base.h"
 #include "x86_analyzer_support.h"
+#include "x86/x86_disasm.h"
 
 #include <vector>
 

@@ -48,7 +48,6 @@ public:
 	void load_annotations(const char *fn);
 	void analyze();
 	void output(fmt_stream &fs);
-	const char *get_annotation_name(x86_16_address_t addr) const;
 private:
 	void load();
 	void relocate();
@@ -58,7 +57,7 @@ private:
 	void analyze_blocks();
 	void analyze_procs();
 
-	const char *get_annotation(x86_16_address_t addr) const;
+	const char *get_annotation_name(uint32 ea) const;
 };
 
 #endif

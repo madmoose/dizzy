@@ -1,11 +1,12 @@
 #include "exe_mz_analyzer.h"
 
-#include <queue>
-
 #include <cassert>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <queue>
 #include <sstream>
+
+#include "support/x86_name_generator.h"
 
 void exe_mz_analyzer_t::init(exe_mz_t *abinary)
 {
@@ -206,6 +207,7 @@ void exe_mz_analyzer_t::analyze_procs()
 
 		proc_t proc;
 		proc.begin = i->ea();
+		proc.name = get_annotation_name(proc.begin);
 		procs.push_back(proc);
 	}
 
@@ -251,6 +253,9 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 	x86_16_address_t cur_proc_addr;
 	procs_t::iterator cur_proc_i = procs.end();
 
+	x86_16_name_generator_t name_generator;
+	name_generator.procs = &procs;
+
 	segments.dump();
 
 	while (ea < end_ea)
@@ -264,7 +269,7 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 		{
 			if (memory.is_proc(ea))
 			{
-				const char *name = get_annotation_name(addr);
+				const char *name = get_annotation_name(ea);
 				if (name)
 					fs.printf("\n%s ", name);
 				else
@@ -283,6 +288,7 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 
 			fs.set_col(27);
 
+			/*
 			x86_16_address_t dst;
 			const char *name;
 			if (insn.op_name == op_call &&
@@ -291,10 +297,10 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 			{
 				fs.printf("call %s\n", name);
 			}
-			else
+			else*/
 			{
 				char dline[64];
-				insn.to_str(dline);
+				insn.to_str(dline, addr, &name_generator);
 				fs.puts(dline);
 			}
 
@@ -302,7 +308,7 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 
 			if (cur_proc_i != procs.end() && cur_proc_i->end == ea)
 			{
-				const char *name = get_annotation_name(cur_proc_addr);
+				const char *name = get_annotation_name(cur_proc_addr.ea());
 				if (name)
 					fs.printf("%s ", name);
 				else
@@ -353,15 +359,26 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 	}
 }
 
-const char *exe_mz_analyzer_t::get_annotation_name(x86_16_address_t addr) const
+const char *exe_mz_analyzer_t::get_annotation_name(uint32 ea) const
 {
-		exe_mz_annotation_t key;
-		key.addr = addr;
-		std::pair<exe_mz_annotations_t::const_iterator, exe_mz_annotations_t::const_iterator> result =
-			std::equal_range(annotations.begin(), annotations.end(), key);
+		exe_mz_annotations_t::const_iterator b, e, m;
+		b = annotations.begin();
+		e = annotations.end();
 
-		if (result.first == result.second)
+		while (b != e)
+		{
+			m = b + (e - b) / 2;
+			if (ea == m->addr.ea())
+				break;
+
+			if (ea < m->addr.ea())
+				e = m;
+			else
+				b = m + 1;
+		}
+
+		if (b == e || m->addr.ea() != ea)
 			return 0;
 
-		return result.first->name;
+		return m->name;
 }
