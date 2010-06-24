@@ -9,7 +9,6 @@
  * x86_16_address_t
  * x86_16_segment_t
  * x86_16_segments_t
- * x86_16_attributed_memory_t
  */
 
 struct x86_insn;
