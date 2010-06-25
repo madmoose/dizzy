@@ -4,7 +4,7 @@
 #include "base/base.h"
 #include "analyzer/support/x86_analyzer_support.h"
 
-struct x86_16_name_generator_t;
+struct annotations_t;
 
 enum e_ops {
 	op_illegal,
@@ -203,7 +203,7 @@ struct x86_insn
 
 	x86_insn_arg arg[2];
 
-	void to_str(char *str, x86_16_address_t addr = x86_16_address_t(), x86_16_name_generator_t *name_generator = 0);
+	void to_str(char *str, x86_16_address_t addr = x86_16_address_t(), annotations_t *annotations = 0);
 	void dump(char *str);
 };
 

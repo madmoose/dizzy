@@ -6,7 +6,7 @@
 #include <queue>
 #include <sstream>
 
-#include "support/x86_name_generator.h"
+#include "support/annotations.h"
 
 void exe_mz_analyzer_t::init(exe_mz_t *abinary)
 {
@@ -253,8 +253,8 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 	x86_16_address_t cur_proc_addr;
 	procs_t::iterator cur_proc_i = procs.end();
 
-	x86_16_name_generator_t name_generator;
-	name_generator.procs = &procs;
+	annotations_t annotations;
+	annotations.procs = &procs;
 
 	segments.dump();
 
@@ -300,7 +300,7 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 			else*/
 			{
 				char dline[64];
-				insn.to_str(dline, addr, &name_generator);
+				insn.to_str(dline, addr, &annotations);
 				fs.puts(dline);
 			}
 

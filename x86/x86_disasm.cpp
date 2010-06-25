@@ -6,7 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "analyzer/support/x86_name_generator.h"
+#include "analyzer/support/procs.h"
+#include "analyzer/support/annotations.h"
 
 const char *str_ops[] = {
 	"<illegal>",
@@ -586,7 +587,7 @@ void x86_insn::dump(char *str)
 	arg[1].dump(str+strlen(str));
 }
 
-void x86_insn::to_str(char *str, x86_16_address_t addr, x86_16_name_generator_t *name_generator)
+void x86_insn::to_str(char *str, x86_16_address_t addr, annotations_t *annotations)
 {
 	str[0] = '\0';
 
@@ -646,13 +647,23 @@ void x86_insn::to_str(char *str, x86_16_address_t addr, x86_16_name_generator_t 
 	{
 		x86_16_address_t dst;
 
-		const char *name = 0;
-		if (name_generator && x86_16_branch_destination(*this, addr, &dst))
-			name = name_generator->get_proc_name(dst);
+		if (annotations && x86_16_branch_destination(*this, addr, &dst))
+		{
+			procs_t::const_iterator pi = annotations->procs->get_proc(dst.ea());
+			if (pi != annotations->procs->end())
+			{
+				char auto_name[32];
+				sprintf(auto_name, "sub_%x", pi->begin);
 
-		if (name)
-			sprintf(str+strlen(str), "%s", name);
-		else
+				int offset = dst.ea() - pi->begin;
+				if (offset == 0)
+					sprintf(str+strlen(str), "%s (%04x:%04x)", pi->name ? pi->name : auto_name, dst.seg, dst.ofs);
+				else
+					sprintf(str+strlen(str), "%s+%x (%04x:%04x)", pi->name ? pi->name : auto_name, offset, dst.seg, dst.ofs);
+				return;
+			}
+		}
+
 		if (arg[0].size == SZ_BYTE)
 		{
 			sprintf(str+strlen(str), "%08X", (int8)(arg[0].imm + op_size));
