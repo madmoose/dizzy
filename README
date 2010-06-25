@@ -20,7 +20,6 @@ Also recently hacked in was the ability to name functions in the disassembly.
 The disassembler even comes pre-packaged (read: hardcoded...) with a short list
 of function names for Zak McKracken and the Alien Mindbenders, taken from
 ScummVM.
-NOTE: Function names were removed in the Big Rewrite. They'll be back.
 
 Anyway, enjoy!
 
