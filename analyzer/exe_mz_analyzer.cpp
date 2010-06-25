@@ -288,21 +288,9 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 
 			fs.set_col(27);
 
-			/*
-			x86_16_address_t dst;
-			const char *name;
-			if (insn.op_name == op_call &&
-			    x86_16_branch_destination(insn, addr, &dst) &&
-			    (name = get_annotation_name(dst)))
-			{
-				fs.printf("call %s\n", name);
-			}
-			else*/
-			{
-				char dline[64];
-				insn.to_str(dline, addr, &annotations);
-				fs.puts(dline);
-			}
+			char dline[64];
+			insn.to_str(dline, addr, &annotations);
+			fs.puts(dline);
 
 			ea += insn.op_size;
 

@@ -657,9 +657,15 @@ void x86_insn::to_str(char *str, x86_16_address_t addr, annotations_t *annotatio
 
 				int offset = dst.ea() - pi->begin;
 				if (offset == 0)
-					sprintf(str+strlen(str), "%s (%04x:%04x)", pi->name ? pi->name : auto_name, dst.seg, dst.ofs);
+					sprintf(str+strlen(str), "%s", pi->name ? pi->name : auto_name);
 				else
-					sprintf(str+strlen(str), "%s+%x (%04x:%04x)", pi->name ? pi->name : auto_name, offset, dst.seg, dst.ofs);
+					sprintf(str+strlen(str), "%s+%x", pi->name ? pi->name : auto_name, offset);
+
+				int w = strlen(str);
+				while (w < 24)
+					str[w++] = ' ';
+				str[w] = '\0';
+				sprintf(str+strlen(str), "  (%04x:%04x)", dst.seg, dst.ofs);
 				return;
 			}
 		}
@@ -678,7 +684,7 @@ void x86_insn::to_str(char *str, x86_16_address_t addr, annotations_t *annotatio
 	}
 
 
-	char arg_str[32];
+	char arg_str[64];
 	arg_str[0] = '\0';
 
 	for (int i = 0; i != 2; ++i)
