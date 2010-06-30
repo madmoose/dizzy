@@ -68,6 +68,12 @@ void attributed_memory_t::mark_as_proc(uint32 ea)
 	*p |= ATTR_PROC;
 }
 
+void attributed_memory_t::unmark_as_proc(uint32 ea)
+{
+	byte *p = attrib_ref_at(ea);
+	*p &= ~ATTR_PROC;
+}
+
 bool attributed_memory_t::is_unmarked(uint32 ea, uint len) const
 {
 	byte *p = attrib_ref_at(ea);

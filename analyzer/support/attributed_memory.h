@@ -44,6 +44,8 @@ public:
 	void mark_as_flow(uint32 ea);
 	void mark_as_proc(uint32 ea);
 
+	void unmark_as_proc(uint32 ea);
+
 	bool is_unmarked(uint32 ea, uint len = 1) const;
 	bool is_code(uint32 ea) const;
 	bool is_op(uint32 ea) const;

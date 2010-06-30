@@ -7,6 +7,8 @@
 #include <sstream>
 
 #include "support/annotations.h"
+#include "support/blocks.h"
+#include "support/procs.h"
 
 void exe_mz_analyzer_t::init(exe_mz_t *abinary)
 {
@@ -29,15 +31,14 @@ void exe_mz_analyzer_t::load_annotations(const char *fn)
 		ss >> t >> std::hex >> seg >> c >> ofs >> name;
 		printf("%c %04x:%04x %s\n", t, seg, ofs, name.c_str());
 
-		exe_mz_annotation_t a;
-		a.addr = x86_16_address_t(seg, ofs);
-		a.name = strdup(name.c_str());
+		proc_t proc;
+		proc.name = strdup(name.c_str());
+		proc.addr = x86_16_address_t(seg, ofs);
+		proc.begin = proc.end = proc.addr.ea();
 
-		annotations.push_back(a);
+		annotations.procs->push_back(proc);
 	}
 	putchar('\n');
-
-	std::sort(annotations.begin(), annotations.end());
 }
 
 void exe_mz_analyzer_t::analyze()
@@ -107,11 +108,12 @@ void exe_mz_analyzer_t::trace()
 	init_cs_ip = x86_16_address_t(base_seg + binary->head.e_cs, binary->head.e_ip);
 	cs_ip_queue.push(init_cs_ip);
 
-	// Add annotations
-	for (exe_mz_annotations_t::const_iterator i = annotations.begin(); i != annotations.end(); ++i)
+	// Add proc entry points
+	for (procs_t::const_iterator i = annotations.procs->begin(),
+	                             e = annotations.procs->end(); i != e; ++i)
 	{
 		cs_ip_queue.push(i->addr);
-		memory.mark_as_proc(i->addr.ea());
+		memory.mark_as_proc(i->begin);
 	}
 
 	while (!cs_ip_queue.empty())
@@ -201,30 +203,55 @@ void exe_mz_analyzer_t::analyze_blocks()
 
 void exe_mz_analyzer_t::analyze_procs()
 {
-	for (addr_set_t::const_iterator i = call_dsts.begin(); i != call_dsts.end(); ++i)
+	// Go through all the registered call destinations and create procs
+	// starting there
+	for (addr_set_t::iterator i = call_dsts.begin(),
+	                          e = call_dsts.end(); i != e; ++i)
 	{
+		if (memory.is_proc(i->ea()))
+			continue;
 		memory.mark_as_proc(i->ea());
 
 		proc_t proc;
 		proc.begin = i->ea();
-		proc.name = get_annotation_name(proc.begin);
-		procs.push_back(proc);
-	}
 
-	for (procs_t::iterator pi = procs.begin(); pi != procs.end(); ++pi)
+		char *name;
+		asprintf(&name, "sub_%x", proc.begin);
+		proc.name = name;
+
+		annotations.procs->push_back(proc);
+	}
+	annotations.procs->sort();
+
+	for (procs_t::iterator pi = annotations.procs->begin(),
+	                       pe = annotations.procs->end();
+	                       pi != pe; ++pi)
 	{
 		procs_t::iterator next_pi = pi + 1;
-		uint32 next_proc_ea = next_pi != procs.end() ? next_pi->begin : ((base_seg << 4) + binary->image_size);
+		uint32 next_proc_ea =
+			next_pi != annotations.procs->end()
+			? next_pi->begin
+			: ((base_seg << 4) + binary->image_size);
 
 		blocks_t::iterator bi = blocks.get_block(pi->begin);
-		while (bi != blocks.end() && bi->begin < next_proc_ea && bi->terminator_op_name != op_ret)
+		while (bi != blocks.end() &&
+		       bi->begin < next_proc_ea
+		       && bi->terminator_op_name != op_ret)
+		{
 			++bi;
+		}
 
 		if (next_proc_ea <= bi->begin)
 			--bi;
 
 		if (bi != blocks.end())
 			pi->end = bi->end;
+
+		if (pi->end <= pi->begin)
+		{
+			printf("Function annotation %04x:%04x '%s' invalid.\n", pi->addr.seg, pi->addr.ofs, pi->name);
+			memory.unmark_as_proc(pi->begin);
+		}
 	}
 }
 
@@ -251,10 +278,7 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 	uint32 end_ea = ea + binary->image_size;
 
 	x86_16_address_t cur_proc_addr;
-	procs_t::iterator cur_proc_i = procs.end();
-
-	annotations_t annotations;
-	annotations.procs = &procs;
+	procs_t::iterator cur_proc_i = annotations.procs->end();
 
 	segments.dump();
 
@@ -269,16 +293,13 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 		{
 			if (memory.is_proc(ea))
 			{
-				const char *name = get_annotation_name(ea);
-				if (name)
-					fs.printf("\n%s ", name);
-				else
-					fs.printf("\nsub_%x ", ea);
+				fs.printf("\n%s ", get_proc_name(ea));
+
 				if (fs.col() < 27)
 					fs.set_col(27);
 				fs.puts("proc");
 
-				cur_proc_i = procs.get_proc(ea);
+				cur_proc_i = annotations.procs->get_proc(ea);
 				cur_proc_addr = addr;
 			}
 			else if (!memory.is_flow(ea))
@@ -294,18 +315,15 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 
 			ea += insn.op_size;
 
-			if (cur_proc_i != procs.end() && cur_proc_i->end == ea)
+			if (cur_proc_i != annotations.procs->end() && cur_proc_i->end == ea)
 			{
-				const char *name = get_annotation_name(cur_proc_addr.ea());
-				if (name)
-					fs.printf("%s ", name);
-				else
-					fs.printf("sub_%x ", cur_proc_i->begin);
+				fs.printf("%s ", get_proc_name(cur_proc_addr.ea()));
+
 				if (fs.col() < 27)
 					fs.set_col(27);
 				fs.puts("endp");
 
-				cur_proc_i = procs.end();
+				cur_proc_i = annotations.procs->end();
 			}
 		}
 		else
@@ -347,26 +365,12 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 	}
 }
 
-const char *exe_mz_analyzer_t::get_annotation_name(uint32 ea) const
+const char *exe_mz_analyzer_t::get_proc_name(uint32 ea) const
 {
-		exe_mz_annotations_t::const_iterator b, e, m;
-		b = annotations.begin();
-		e = annotations.end();
+	assert(memory.is_proc(ea));
 
-		while (b != e)
-		{
-			m = b + (e - b) / 2;
-			if (ea == m->addr.ea())
-				break;
+	procs_t::const_iterator pi = annotations.procs->get_proc(ea);
+	assert(pi != annotations.procs->end());
 
-			if (ea < m->addr.ea())
-				e = m;
-			else
-				b = m + 1;
-		}
-
-		if (b == e || m->addr.ea() != ea)
-			return 0;
-
-		return m->name;
+	return pi->name;
 }

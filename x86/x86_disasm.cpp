@@ -665,7 +665,7 @@ void x86_insn::to_str(char *str, x86_16_address_t addr, annotations_t *annotatio
 				while (w < 24)
 					str[w++] = ' ';
 				str[w] = '\0';
-				sprintf(str+strlen(str), "  (%04x:%04x)", dst.seg, dst.ofs);
+				sprintf(str+strlen(str), " (%04x:%04x)", dst.seg, dst.ofs);
 				return;
 			}
 		}

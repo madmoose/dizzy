@@ -1,7 +1,15 @@
 #include "procs.h"
 
+void procs_t::sort()
+{
+	if (_needs_sorting)
+		std::sort(procs.begin(), procs.end());
+	_needs_sorting = false;
+}
+
 procs_t::iterator procs_t::get_proc(uint32 ea)
 {
+	sort();
 	procs_t::iterator b = procs.begin();
 	procs_t::iterator e = procs.end();
 
@@ -14,8 +22,10 @@ procs_t::iterator procs_t::get_proc(uint32 ea)
 		else
 			e = mid;
 	}
-	if (ea < b->begin && b != procs.begin())
+
+	if (b == procs.end() || (ea < b->begin && b != procs.begin()))
 		--b;
+
 
 	if (b->contains(ea))
 		return b;

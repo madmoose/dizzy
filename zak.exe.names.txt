@@ -118,5 +118,4 @@ f 1000:6cc2 op_setBitVar
 f 1000:6d0b op_getBitVar
 f 1000:6d46 op_setActorElevation
 f 1000:6d7c op_getActorElevation
-f 1000:6d9c op_dummy
 f 1000:6d9c op_switchCostumeSet

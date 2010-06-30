@@ -2,27 +2,14 @@
 #define EXE_MZ_ANALYZER_H
 
 #include "binaries/exe_mz.h"
+#include "support/annotations.h"
 #include "support/attributed_memory.h"
 #include "support/blocks.h"
-#include "support/procs.h"
+#include "support/x86_analyzer_support.h"
 
 #include <map>
 #include <queue>
 #include <set>
-
-struct exe_mz_annotation_t
-{
-	x86_16_address_t  addr;
-	const char       *name;
-};
-
-inline
-bool operator<(const exe_mz_annotation_t &a, const exe_mz_annotation_t &b)
-{
-	return a.addr < b.addr;
-}
-
-typedef std::vector<exe_mz_annotation_t> exe_mz_annotations_t;
 
 class exe_mz_analyzer_t
 {
@@ -41,8 +28,7 @@ class exe_mz_analyzer_t
 	addr_set_t                 call_dsts;
 
 	blocks_t                   blocks;
-	procs_t                    procs;
-	exe_mz_annotations_t       annotations;
+	annotations_t              annotations;
 public:
 	void init(exe_mz_t *abinary);
 	void load_annotations(const char *fn);
@@ -57,7 +43,7 @@ private:
 	void analyze_blocks();
 	void analyze_procs();
 
-	const char *get_annotation_name(uint32 ea) const;
+	const char *get_proc_name(uint32 ea) const;
 };
 
 #endif
