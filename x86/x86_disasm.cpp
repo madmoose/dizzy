@@ -650,16 +650,12 @@ void x86_insn::to_str(char *str, x86_16_address_t addr, annotations_t *annotatio
 		if (annotations && x86_16_branch_destination(*this, addr, &dst))
 		{
 			procs_t::const_iterator pi = annotations->procs->get_proc(dst.ea());
-			if (pi != annotations->procs->end())
+			if (pi != annotations->procs->end() && pi->name)
 			{
-				char auto_name[32];
-				sprintf(auto_name, "sub_%x", pi->begin);
-
 				int offset = dst.ea() - pi->begin;
-				if (offset == 0)
-					sprintf(str+strlen(str), "%s", pi->name ? pi->name : auto_name);
-				else
-					sprintf(str+strlen(str), "%s+%x", pi->name ? pi->name : auto_name, offset);
+				sprintf(str+strlen(str), "%s", pi->name);
+				if (offset)
+					sprintf(str+strlen(str), "+%x", offset);
 
 				int w = strlen(str);
 				while (w < 24)
