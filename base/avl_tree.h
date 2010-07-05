@@ -48,21 +48,21 @@ NodePtr avl_predecessor(NodePtr n)
 }
 
 template <typename NodeTp>
-struct avl_node_base_t {
-	avl_node_base_t *parent;
-	avl_node_base_t *left;
-	avl_node_base_t *right;
+struct avl_node_base {
+	avl_node_base *parent;
+	avl_node_base *left;
+	avl_node_base *right;
 	int              height;
 
 	typedef NodeTp node_type;
 
-	avl_node_base_t()
+	avl_node_base()
 		: parent(0), left(0), right(0), height(0)
 	{}
 };
 
 template <typename ValueTp>
-struct avl_node_t : public avl_node_base_t<avl_node_t<ValueTp> > {
+struct avl_node_t : public avl_node_base<avl_node_t<ValueTp> > {
 	typedef ValueTp value_type;
 
 	value_type  value;
@@ -72,7 +72,7 @@ struct avl_node_t : public avl_node_base_t<avl_node_t<ValueTp> > {
 	{}
 };
 
-template <typename T, typename NodeTp, typename DiffTp>
+template <typename T, typename NodeBaseTp, typename DiffTp>
 struct avl_tree_iterator_t {
 	typedef T value_type;
 
@@ -81,8 +81,8 @@ struct avl_tree_iterator_t {
 	typedef value_type&                     reference;
 	typedef value_type*                     pointer;
 
-	NodeTp *n;
-	typedef typename NodeTp::node_type     node_type;
+	NodeBaseTp *n;
+	typedef typename NodeBaseTp::node_type     node_type;
 
 	value_type &operator*()  const { return  static_cast<node_type*>(n)->value; }
 	value_type *operator->() const { return &static_cast<node_type*>(n)->value; }
@@ -103,7 +103,7 @@ struct avl_tree_iterator_t {
 		: n(0)
 	{}
 
-	explicit avl_tree_iterator_t(NodeTp *n)
+	explicit avl_tree_iterator_t(NodeBaseTp *n)
 		: n(n)
 	{}
 };
@@ -222,14 +222,14 @@ class avl_tree_t
 {
 	// Private types
 	typedef avl_node_t<T>                   node;
-	typedef avl_node_base_t<avl_node_t<T> > node_base_t;
+	typedef avl_node_base<avl_node_t<T> > node_base;
 
 public:
 	// Public types
 	typedef T value_type;
 
-	typedef       avl_tree_iterator_t<value_type, node_base_t, typename Allocator::difference_type>       iterator;
-	typedef const avl_tree_iterator_t<value_type, const node_base_t, typename Allocator::difference_type> const_iterator;
+	typedef       avl_tree_iterator_t<value_type, node_base, typename Allocator::difference_type>       iterator;
+	typedef const avl_tree_iterator_t<value_type, const node_base, typename Allocator::difference_type> const_iterator;
 
 	typedef       value_type&               reference;
 	typedef const value_type&         const_reference;
@@ -254,12 +254,12 @@ public:
 	const_iterator root()  const { return const_iterator(_root); }
 private:
 	// Private members
-	node_base_t *_root;
-	node_base_t  _end_node;
+	node_base *_root;
+	node_base  _end_node;
 
 	// Private methods
-	      node_base_t *end_node()       { return &_end_node; }
-	const node_base_t *end_node() const { return &_end_node; }
+	      node_base *end_node()       { return &_end_node; }
+	const node_base *end_node() const { return &_end_node; }
 
 	pointer rebalance(pointer n);
 
@@ -270,7 +270,7 @@ public:
 
 	iterator insert(iterator i, const value_type &v)
 	{
-		node_base_t *n = new node(v);
+		node_base *n = new node(v);
 
 		if (!i.n->left)
 		{
@@ -279,7 +279,7 @@ public:
 		}
 		else
 		{
-			node_base_t *p = avl_predecessor(i.n);
+			node_base *p = avl_predecessor(i.n);
 			p->right = n;
 			n->parent = p;
 		}
