@@ -5,8 +5,37 @@
 #include <cassert>
 #include <memory>
 
-template <typename NodePtr>
-NodePtr avl_min(NodePtr n)
+/*
+ * struct avl_node_base_t;
+ *
+ * avl_node_base_t *avl_min(avl_node_base_t *n)
+ * avl_node_base_t *avl_max(avl_node_base_t *n)
+ * avl_node_base_t *avl_successor(avl_node_base_t *n)
+ * avl_node_base_t *avl_predecessor(avl_node_base_t *n)
+ *
+ * avl_node_base_t *avl_rotate_right(avl_node_base_t *q)
+ * avl_node_base_t *avl_rotate_left(avl_node_base_t *p)
+ * avl_node_base_t *avl_rebalance(avl_node_base_t *n)
+ *
+ * struct avl_node_t;
+ * struct avl_tree_iterator_t;
+ * class avl_tree_t;
+*/
+
+
+struct avl_node_base_t {
+	avl_node_base_t *parent;
+	avl_node_base_t *left;
+	avl_node_base_t *right;
+	int              height;
+
+	avl_node_base_t()
+		: parent(0), left(0), right(0), height(0)
+	{}
+};
+
+inline
+avl_node_base_t *avl_min(avl_node_base_t *n)
 {
 	while (n->left)
 		n = n->left;
@@ -14,8 +43,8 @@ NodePtr avl_min(NodePtr n)
 	return n;
 }
 
-template <typename NodePtr>
-NodePtr avl_max(NodePtr n)
+inline
+avl_node_base_t *avl_max(avl_node_base_t *n)
 {
 	while (n->right)
 		n = n->right;
@@ -23,8 +52,8 @@ NodePtr avl_max(NodePtr n)
 	return n;
 }
 
-template <typename NodePtr>
-NodePtr avl_successor(NodePtr n)
+inline
+avl_node_base_t *avl_successor(avl_node_base_t *n)
 {
 	if (n->right)
 		return avl_min(n->right);
@@ -35,8 +64,8 @@ NodePtr avl_successor(NodePtr n)
 	return n->parent;
 }
 
-template <typename NodePtr>
-NodePtr avl_predecessor(NodePtr n)
+inline
+avl_node_base_t *avl_predecessor(avl_node_base_t *n)
 {
 	if (n->left)
 		return avl_max(n->left);
@@ -46,67 +75,6 @@ NodePtr avl_predecessor(NodePtr n)
 
 	return n->parent;
 }
-
-template <typename NodeTp>
-struct avl_node_base {
-	avl_node_base *parent;
-	avl_node_base *left;
-	avl_node_base *right;
-	int              height;
-
-	typedef NodeTp node_type;
-
-	avl_node_base()
-		: parent(0), left(0), right(0), height(0)
-	{}
-};
-
-template <typename ValueTp>
-struct avl_node_t : public avl_node_base<avl_node_t<ValueTp> > {
-	typedef ValueTp value_type;
-
-	value_type  value;
-
-	avl_node_t(const value_type &value)
-		: value(value)
-	{}
-};
-
-template <typename T, typename NodeBaseTp, typename DiffTp>
-struct avl_tree_iterator_t {
-	typedef T value_type;
-
-	typedef std::bidirectional_iterator_tag iterator_category;
-	typedef DiffTp                          difference_type;
-	typedef value_type&                     reference;
-	typedef value_type*                     pointer;
-
-	NodeBaseTp *n;
-	typedef typename NodeBaseTp::node_type     node_type;
-
-	value_type &operator*()  const { return  static_cast<node_type*>(n)->value; }
-	value_type *operator->() const { return &static_cast<node_type*>(n)->value; }
-
-	friend bool operator==(const avl_tree_iterator_t &a, const avl_tree_iterator_t &b) { return a.n == b.n; }
-	friend bool operator!=(const avl_tree_iterator_t &a, const avl_tree_iterator_t &b) { return !(a == b); }
-
-	avl_tree_iterator_t &operator++() { n = avl_successor(n); return *this; }
-	avl_tree_iterator_t  operator++(int) { avl_tree_iterator_t tmp = *this; ++*this; return tmp; }
-
-	avl_tree_iterator_t &operator--() { n = avl_predecessor(n); return *this; }
-	avl_tree_iterator_t  operator--(int) { avl_tree_iterator_t tmp = *this; --*this; return tmp; }
-
-	avl_tree_iterator_t left()  const { return avl_tree_iterator_t(n->left); }
-	avl_tree_iterator_t right() const { return avl_tree_iterator_t(n->right); }
-
-	avl_tree_iterator_t()
-		: n(0)
-	{}
-
-	explicit avl_tree_iterator_t(NodeBaseTp *n)
-		: n(n)
-	{}
-};
 
 /*
  * avl_rotate_right:
@@ -121,12 +89,12 @@ struct avl_tree_iterator_t {
 
 #define h(n) ((n) ? (n)->height : 0)
 
-template <typename NodePtr>
-NodePtr avl_rotate_right(NodePtr q)
+inline
+avl_node_base_t *avl_rotate_right(avl_node_base_t *q)
 {
 	assert(q->left);
 
-	NodePtr p = q->left;
+	avl_node_base_t *p = q->left;
 
 	q->left  = p->right;
 	p->right = q;
@@ -158,12 +126,12 @@ NodePtr avl_rotate_right(NodePtr q)
  *
  */
 
-template <typename NodePtr>
-NodePtr avl_rotate_left(NodePtr p)
+inline
+avl_node_base_t *avl_rotate_left(avl_node_base_t *p)
 {
 	assert(p->right);
 
-	NodePtr q = p->right;
+	avl_node_base_t *q = p->right;
 
 	p->right = q->left;
 	q->left  = p;
@@ -186,8 +154,8 @@ NodePtr avl_rotate_left(NodePtr p)
 
 #define hdiff(n) (h(n->left) - h(n->right))
 
-template <typename NodePtr>
-NodePtr avl_rebalance(NodePtr n)
+inline
+avl_node_base_t *avl_rebalance(avl_node_base_t *n)
 {
 	if (!n) return n;
 
@@ -217,19 +185,70 @@ NodePtr avl_rebalance(NodePtr n)
 #undef hdiff
 #undef h
 
+template <typename ValueTp>
+struct avl_node_t : public avl_node_base_t
+{
+	typedef ValueTp value_type;
+
+	value_type value;
+
+	avl_node_t(const value_type &value)
+		: value(value)
+	{}
+};
+
+template <typename T, typename NodeTp, typename DiffTp>
+class avl_tree_iterator_t
+{
+	typedef NodeTp node_type;
+
+public:
+	typedef T value_type;
+
+	typedef std::bidirectional_iterator_tag iterator_category;
+	typedef DiffTp                          difference_type;
+	typedef value_type&                     reference;
+	typedef value_type*                     pointer;
+
+	avl_node_base_t *n;
+
+	value_type &operator*()  const { return  static_cast<node_type*>(n)->value; }
+	value_type *operator->() const { return &static_cast<node_type*>(n)->value; }
+
+	friend bool operator==(const avl_tree_iterator_t &a, const avl_tree_iterator_t &b) { return a.n == b.n; }
+	friend bool operator!=(const avl_tree_iterator_t &a, const avl_tree_iterator_t &b) { return !(a == b); }
+
+	avl_tree_iterator_t &operator++() { n = avl_successor(n); return *this; }
+	avl_tree_iterator_t  operator++(int) { avl_tree_iterator_t tmp = *this; ++*this; return tmp; }
+
+	avl_tree_iterator_t &operator--() { n = avl_predecessor(n); return *this; }
+	avl_tree_iterator_t  operator--(int) { avl_tree_iterator_t tmp = *this; --*this; return tmp; }
+
+	avl_tree_iterator_t left()  const { return avl_tree_iterator_t(n->left); }
+	avl_tree_iterator_t right() const { return avl_tree_iterator_t(n->right); }
+
+	avl_tree_iterator_t()
+		: n(0)
+	{}
+
+	explicit avl_tree_iterator_t(avl_node_base_t *n)
+		: n(n)
+	{}
+};
+
 template <typename T, typename Allocator = std::allocator<T> >
 class avl_tree_t
 {
 	// Private types
-	typedef avl_node_t<T>                   node;
-	typedef avl_node_base<avl_node_t<T> > node_base;
+	typedef avl_node_base_t node_base;
+	typedef avl_node_t<T>   node;
 
 public:
 	// Public types
 	typedef T value_type;
 
-	typedef       avl_tree_iterator_t<value_type, node_base, typename Allocator::difference_type>       iterator;
-	typedef const avl_tree_iterator_t<value_type, const node_base, typename Allocator::difference_type> const_iterator;
+	typedef       avl_tree_iterator_t<value_type, node, typename Allocator::difference_type>       iterator;
+	typedef const avl_tree_iterator_t<value_type, const node, typename Allocator::difference_type> const_iterator;
 
 	typedef       value_type&               reference;
 	typedef const value_type&         const_reference;
@@ -252,6 +271,7 @@ public:
 
 	iterator       root()        { return iterator(_root); }
 	const_iterator root()  const { return const_iterator(_root); }
+
 private:
 	// Private members
 	node_base *_root;
