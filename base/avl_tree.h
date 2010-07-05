@@ -9,7 +9,7 @@ template <typename NodePtr>
 NodePtr avl_min(NodePtr n)
 {
 	while (n->left)
-		n = static_cast<NodePtr>(n->left);
+		n = n->left;
 
 	return n;
 }
@@ -18,7 +18,7 @@ template <typename NodePtr>
 NodePtr avl_max(NodePtr n)
 {
 	while (n->right)
-		n = static_cast<NodePtr>(n->right);
+		n = n->right;
 
 	return n;
 }
@@ -27,39 +27,44 @@ template <typename NodePtr>
 NodePtr avl_successor(NodePtr n)
 {
 	if (n->right)
-		return avl_min(static_cast<NodePtr>(n->right));
+		return avl_min(n->right);
 
 	while (n->parent && n->parent->right == n)
-		n = static_cast<NodePtr>(n->parent);
+		n = n->parent;
 
-	return static_cast<NodePtr>(n->parent);
+	return n->parent;
 }
 
 template <typename NodePtr>
 NodePtr avl_predecessor(NodePtr n)
 {
 	if (n->left)
-		return avl_max(static_cast<NodePtr>(n->left));
+		return avl_max(n->left);
 
 	while (n->parent && n->parent->left == n)
-		n = static_cast<NodePtr>(n->parent);
+		n = n->parent;
 
-	return static_cast<NodePtr>(n->parent);
+	return n->parent;
 }
 
+template <typename NodeTp>
 struct avl_node_base_t {
 	avl_node_base_t *parent;
 	avl_node_base_t *left;
 	avl_node_base_t *right;
 	int              height;
 
+	typedef NodeTp node_type;
+
 	avl_node_base_t()
 		: parent(0), left(0), right(0), height(0)
 	{}
 };
 
-template <typename value_type>
-struct avl_node_t : public avl_node_base_t {
+template <typename ValueTp>
+struct avl_node_t : public avl_node_base_t<avl_node_t<ValueTp> > {
+	typedef ValueTp value_type;
+
 	value_type  value;
 
 	avl_node_t(const value_type &value)
@@ -67,7 +72,7 @@ struct avl_node_t : public avl_node_base_t {
 	{}
 };
 
-template <typename T, typename NodePtr, typename DiffTp>
+template <typename T, typename NodeTp, typename DiffTp>
 struct avl_tree_iterator_t {
 	typedef T value_type;
 
@@ -76,13 +81,14 @@ struct avl_tree_iterator_t {
 	typedef value_type&                     reference;
 	typedef value_type*                     pointer;
 
-	NodePtr n;
+	NodeTp *n;
+	typedef typename NodeTp::node_type     node_type;
 
-	value_type &operator*()  const { return  n->value; }
-	value_type *operator->() const { return &n->value; }
+	value_type &operator*()  const { return  static_cast<node_type*>(n)->value; }
+	value_type *operator->() const { return &static_cast<node_type*>(n)->value; }
 
-	friend bool operator==(const avl_tree_iterator_t &a, const avl_tree_iterator_t &b) const { return a.n == b.n; }
-	friend bool operator!=(const avl_tree_iterator_t &a, const avl_tree_iterator_t &b) const { return !(a == b); }
+	friend bool operator==(const avl_tree_iterator_t &a, const avl_tree_iterator_t &b) { return a.n == b.n; }
+	friend bool operator!=(const avl_tree_iterator_t &a, const avl_tree_iterator_t &b) { return !(a == b); }
 
 	avl_tree_iterator_t &operator++() { n = avl_successor(n); return *this; }
 	avl_tree_iterator_t  operator++(int) { avl_tree_iterator_t tmp = *this; ++*this; return tmp; }
@@ -90,14 +96,14 @@ struct avl_tree_iterator_t {
 	avl_tree_iterator_t &operator--() { n = avl_predecessor(n); return *this; }
 	avl_tree_iterator_t  operator--(int) { avl_tree_iterator_t tmp = *this; --*this; return tmp; }
 
-	avl_tree_iterator_t left()  const { return avl_tree_iterator_t(static_cast<NodePtr>(n->left)); }
-	avl_tree_iterator_t right() const { return avl_tree_iterator_t(static_cast<NodePtr>(n->right)); }
+	avl_tree_iterator_t left()  const { return avl_tree_iterator_t(n->left); }
+	avl_tree_iterator_t right() const { return avl_tree_iterator_t(n->right); }
 
 	avl_tree_iterator_t()
 		: n(0)
 	{}
 
-	explicit avl_tree_iterator_t(NodePtr n)
+	explicit avl_tree_iterator_t(NodeTp *n)
 		: n(n)
 	{}
 };
@@ -120,7 +126,7 @@ NodePtr avl_rotate_right(NodePtr q)
 {
 	assert(q->left);
 
-	NodePtr p = static_cast<NodePtr>(q->left);
+	NodePtr p = q->left;
 
 	q->left  = p->right;
 	p->right = q;
@@ -157,7 +163,7 @@ NodePtr avl_rotate_left(NodePtr p)
 {
 	assert(p->right);
 
-	NodePtr q = static_cast<NodePtr>(p->right);
+	NodePtr q = p->right;
 
 	p->right = q->left;
 	q->left  = p;
@@ -204,7 +210,7 @@ NodePtr avl_rebalance(NodePtr n)
 		if (!n->parent)
 			return n;
 
-		n = static_cast<NodePtr>(n->parent);
+		n = n->parent;
 	}
 }
 
@@ -214,12 +220,16 @@ NodePtr avl_rebalance(NodePtr n)
 template <typename T, typename Allocator = std::allocator<T> >
 class avl_tree_t
 {
+	// Private types
+	typedef avl_node_t<T>                   node;
+	typedef avl_node_base_t<avl_node_t<T> > node_base_t;
+
 public:
 	// Public types
 	typedef T value_type;
 
-	typedef       avl_tree_iterator_t<value_type, avl_node_t<value_type> *, typename Allocator::difference_type>       iterator;
-	typedef const avl_tree_iterator_t<value_type, const avl_node_t<value_type> *, typename Allocator::difference_type> const_iterator;
+	typedef       avl_tree_iterator_t<value_type, node_base_t, typename Allocator::difference_type>       iterator;
+	typedef const avl_tree_iterator_t<value_type, const node_base_t, typename Allocator::difference_type> const_iterator;
 
 	typedef       value_type&               reference;
 	typedef const value_type&         const_reference;
@@ -243,18 +253,13 @@ public:
 	iterator       root()        { return iterator(_root); }
 	const_iterator root()  const { return const_iterator(_root); }
 private:
-	// Private types
-	typedef       avl_node_t<value_type>        node;
-	typedef       avl_node_t<value_type> *      node_pointer;
-	typedef const avl_node_t<value_type> *const_node_pointer;
-
 	// Private members
-	node_pointer    _root;
-	avl_node_base_t _end_node;
+	node_base_t *_root;
+	node_base_t  _end_node;
 
 	// Private methods
-	      node_pointer end_node()       { return static_cast<      node_pointer>(&_end_node); }
-	const_node_pointer end_node() const { return static_cast<const_node_pointer>(&_end_node); }
+	      node_base_t *end_node()       { return &_end_node; }
+	const node_base_t *end_node() const { return &_end_node; }
 
 	pointer rebalance(pointer n);
 
@@ -265,7 +270,7 @@ public:
 
 	iterator insert(iterator i, const value_type &v)
 	{
-		node_pointer n = new node(v);
+		node_base_t *n = new node(v);
 
 		if (!i.n->left)
 		{
@@ -274,12 +279,12 @@ public:
 		}
 		else
 		{
-			node_pointer p = avl_predecessor(i.n);
+			node_base_t *p = avl_predecessor(i.n);
 			p->right = n;
 			n->parent = p;
 		}
 
-		_root = static_cast<node_pointer>(avl_rebalance(n));
+		_root = avl_rebalance(n);
 
 		return iterator(n);
 	}
