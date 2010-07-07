@@ -34,9 +34,10 @@ void exe_mz_analyzer_t::load_annotations(const char *fn)
 		proc_t proc;
 		proc.name = strdup(name.c_str());
 		proc.addr = x86_16_address_t(seg, ofs);
-		proc.begin = proc.end = proc.addr.ea();
+		proc.begin(proc.addr.ea());
+		proc.end(proc.addr.ea());
 
-		annotations.procs->push_back(proc);
+		annotations.procs->insert(proc);
 	}
 	putchar('\n');
 }
@@ -113,7 +114,7 @@ void exe_mz_analyzer_t::trace()
 	                             e = annotations.procs->end(); i != e; ++i)
 	{
 		cs_ip_queue.push(i->addr);
-		memory.mark_as_proc(i->begin);
+		memory.mark_as_proc(i->begin());
 	}
 
 	while (!cs_ip_queue.empty())
@@ -189,11 +190,11 @@ void exe_mz_analyzer_t::analyze_blocks()
 
 		// Record block information
 		block_t block;
-		block.begin = begin_ea;
-		block.end   = end_ea;
+		block.begin(begin_ea);
+		block.end(end_ea);
 		block.terminator_op_name = insn.op_name;
 
-		blocks.push_back(block);
+		blocks.insert(block);
 
 		if (end_ea == image_end)
 			break;
@@ -213,46 +214,53 @@ void exe_mz_analyzer_t::analyze_procs()
 		memory.mark_as_proc(i->ea());
 
 		proc_t proc;
-		proc.begin = i->ea();
+		proc.begin(i->ea());
 
 		char *name;
-		asprintf(&name, "sub_%x", proc.begin);
+		asprintf(&name, "sub_%x", proc.begin());
 		proc.name = name;
 
-		annotations.procs->push_back(proc);
+		annotations.procs->insert(proc);
 	}
-	annotations.procs->sort();
 
 	for (procs_t::iterator pi = annotations.procs->begin(),
 	                       pe = annotations.procs->end();
 	                       pi != pe; ++pi)
 	{
-		procs_t::iterator next_pi = pi + 1;
+		procs_t::iterator next_pi = pi;
+		++next_pi;
 		uint32 next_proc_ea =
 			next_pi != annotations.procs->end()
-			? next_pi->begin
+			? next_pi->begin()
 			: ((base_seg << 4) + binary->image_size);
 
-		blocks_t::iterator bi = blocks.get_block(pi->begin);
+		blocks_t::iterator bi = blocks.find(pi->begin());
+		assert(bi != blocks.end());
+
 		while (bi != blocks.end() &&
-		       bi->begin < next_proc_ea
+		       bi->begin() < next_proc_ea
 		       && bi->terminator_op_name != op_ret)
 		{
 			++bi;
 		}
 
-		if (next_proc_ea <= bi->begin)
+		if (next_proc_ea <= bi->begin())
 			--bi;
 
 		if (bi != blocks.end())
-			pi->end = bi->end;
+			pi->end(bi->end());
 
-		if (pi->end <= pi->begin)
+		if (pi->end() <= pi->begin())
 		{
 			printf("Function annotation %04x:%04x '%s' invalid.\n", pi->addr.seg, pi->addr.ofs, pi->name);
-			memory.unmark_as_proc(pi->begin);
+			memory.unmark_as_proc(pi->begin());
 		}
 	}
+
+	/*
+	for (procs_t::const_iterator pi = annotations.procs->begin(); pi != annotations.procs->end(); ++pi)
+		printf("%6x - %6x  %s\n", pi->begin(), pi->end(), pi->name);
+	*/
 }
 
 void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &insn, exe_mz_analyzer_t::addr_queue_t &cs_ip_queue)
@@ -299,7 +307,7 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 					fs.set_col(27);
 				fs.puts("proc");
 
-				cur_proc_i = annotations.procs->get_proc(ea);
+				cur_proc_i = annotations.procs->find(ea);
 				cur_proc_addr = addr;
 			}
 			else if (!memory.is_flow(ea))
@@ -315,7 +323,7 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 
 			ea += insn.op_size;
 
-			if (cur_proc_i != annotations.procs->end() && cur_proc_i->end == ea)
+			if (cur_proc_i != annotations.procs->end() && cur_proc_i->end() == ea)
 			{
 				fs.printf("%s ", get_proc_name(cur_proc_addr.ea()));
 
@@ -369,7 +377,7 @@ const char *exe_mz_analyzer_t::get_proc_name(uint32 ea) const
 {
 	assert(memory.is_proc(ea));
 
-	procs_t::const_iterator pi = annotations.procs->get_proc(ea);
+	procs_t::const_iterator pi = annotations.procs->find(ea);
 	assert(pi != annotations.procs->end());
 
 	return pi->name;

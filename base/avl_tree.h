@@ -200,9 +200,13 @@ struct avl_node_t : public avl_node_base_t
 template <typename T, typename NodeTp, typename DiffTp>
 class avl_tree_iterator_t
 {
-	typedef NodeTp node_type;
+	typedef NodeTp               node_type;
+	typedef node_type           *node_pointer_type;
+	typedef avl_tree_iterator_t  iterator_type;
 
 public:
+	avl_node_base_t *n;
+
 	typedef T value_type;
 
 	typedef std::bidirectional_iterator_tag iterator_category;
@@ -210,28 +214,75 @@ public:
 	typedef value_type&                     reference;
 	typedef value_type*                     pointer;
 
-	avl_node_base_t *n;
+	reference operator*()  const { return  static_cast<node_type*>(n)->value; }
+	pointer   operator->() const { return &static_cast<node_type*>(n)->value; }
 
-	value_type &operator*()  const { return  static_cast<node_type*>(n)->value; }
-	value_type *operator->() const { return &static_cast<node_type*>(n)->value; }
+	friend bool operator==(const iterator_type &a, const iterator_type &b) { return a.n == b.n; }
+	friend bool operator!=(const iterator_type &a, const iterator_type &b) { return !(a == b); }
 
-	friend bool operator==(const avl_tree_iterator_t &a, const avl_tree_iterator_t &b) { return a.n == b.n; }
-	friend bool operator!=(const avl_tree_iterator_t &a, const avl_tree_iterator_t &b) { return !(a == b); }
+	iterator_type &operator++() { this->n = avl_successor(this->n); return *this; }
+	iterator_type  operator++(int) { iterator_type tmp = *this; ++*this; return tmp; }
 
-	avl_tree_iterator_t &operator++() { n = avl_successor(n); return *this; }
-	avl_tree_iterator_t  operator++(int) { avl_tree_iterator_t tmp = *this; ++*this; return tmp; }
+	iterator_type &operator--() { this->n = avl_predecessor(this->n); return *this; }
+	iterator_type  operator--(int) { iterator_type tmp = *this; --*this; return tmp; }
 
-	avl_tree_iterator_t &operator--() { n = avl_predecessor(n); return *this; }
-	avl_tree_iterator_t  operator--(int) { avl_tree_iterator_t tmp = *this; --*this; return tmp; }
+	iterator_type left()  const { return iterator_type(n->left); }
+	iterator_type right() const { return iterator_type(n->right); }
 
-	avl_tree_iterator_t left()  const { return avl_tree_iterator_t(n->left); }
-	avl_tree_iterator_t right() const { return avl_tree_iterator_t(n->right); }
-
+public:
 	avl_tree_iterator_t()
-		: n(0)
 	{}
 
 	explicit avl_tree_iterator_t(avl_node_base_t *n)
+		: n(n)
+	{}
+};
+
+template <typename T, typename NodeTp, typename DiffTp>
+class avl_tree_const_iterator_t
+{
+	typedef NodeTp                     non_const_node_type;
+
+	typedef const NodeTp               node_type;
+	typedef node_type                 *node_pointer_type;
+	typedef avl_tree_const_iterator_t  iterator_type;
+
+	typedef avl_tree_iterator_t<T, non_const_node_type, DiffTp> non_const_iterator_type;
+
+public:
+	avl_node_base_t *n;
+
+	typedef T value_type;
+
+	typedef std::bidirectional_iterator_tag iterator_category;
+	typedef DiffTp                          difference_type;
+	typedef const value_type&               reference;
+	typedef const value_type*               pointer;
+
+	reference operator*()  const { return  static_cast<node_type*>(n)->value; }
+	pointer   operator->() const { return &static_cast<node_type*>(n)->value; }
+
+	friend bool operator==(const iterator_type &a, const iterator_type &b) { return a.n == b.n; }
+	friend bool operator!=(const iterator_type &a, const iterator_type &b) { return !(a == b); }
+
+	iterator_type &operator++() { this->n = avl_successor(this->n); return *this; }
+	iterator_type  operator++(int) { iterator_type tmp = *this; ++*this; return tmp; }
+
+	iterator_type &operator--() { this->n = avl_predecessor(this->n); return *this; }
+	iterator_type  operator--(int) { iterator_type tmp = *this; --*this; return tmp; }
+
+	iterator_type left()  const { return iterator_type(n->left); }
+	iterator_type right() const { return iterator_type(n->right); }
+
+	avl_tree_const_iterator_t()
+		: n(0)
+	{}
+
+	avl_tree_const_iterator_t(non_const_iterator_type i)
+		: n(i.n)
+	{}
+
+	explicit avl_tree_const_iterator_t(avl_node_base_t *n)
 		: n(n)
 	{}
 };
@@ -247,8 +298,8 @@ public:
 	// Public types
 	typedef T value_type;
 
-	typedef       avl_tree_iterator_t<value_type, node, typename Allocator::difference_type>       iterator;
-	typedef const avl_tree_iterator_t<value_type, const node, typename Allocator::difference_type> const_iterator;
+	typedef avl_tree_iterator_t      <value_type, node, typename Allocator::difference_type>       iterator;
+	typedef avl_tree_const_iterator_t<value_type, node, typename Allocator::difference_type> const_iterator;
 
 	typedef       value_type&               reference;
 	typedef const value_type&         const_reference;
@@ -288,6 +339,7 @@ public:
 		: _root(end_node())
 	{}
 
+protected:
 	iterator insert(iterator i, const value_type &v)
 	{
 		node_base *n = new node(v);

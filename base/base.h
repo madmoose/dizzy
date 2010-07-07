@@ -6,5 +6,7 @@
 #include "raw_stream.h"
 #include "fmt_stream.h"
 #include "data.h"
+#include "avl_tree.h"
+#include "range_set.h"
 
 #endif

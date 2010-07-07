@@ -7,35 +7,13 @@
 
 #include <vector>
 
-struct block_t
+struct block_t : public range_t<uint32>
 {
-	uint32 begin;
-	uint32 end;
 	e_ops  terminator_op_name;
-
-	bool contains(uint32 ea) const {
-		return begin <= ea && ea < end;
-	}
 };
 
-struct blocks_t
+struct blocks_t : range_set_t<block_t>
 {
-	typedef std::vector<block_t>            blocks_vector_t;
-	typedef blocks_vector_t::iterator       iterator;
-	typedef blocks_vector_t::const_iterator const_iterator;
-
-	iterator       begin()       { return blocks.begin(); }
-	const_iterator begin() const { return blocks.begin(); }
-
-	iterator       end()       { return blocks.end(); }
-	const_iterator end() const { return blocks.end(); }
-
-	void push_back(const block_t &t) { blocks.push_back(t); }
-
-	iterator get_block(uint32 ea);
-
-private:
-	blocks_vector_t blocks;
 };
 
 #endif

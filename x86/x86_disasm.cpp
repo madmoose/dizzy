@@ -649,10 +649,10 @@ void x86_insn::to_str(char *str, x86_16_address_t addr, annotations_t *annotatio
 
 		if (annotations && x86_16_branch_destination(*this, addr, &dst))
 		{
-			procs_t::const_iterator pi = annotations->procs->get_proc(dst.ea());
+			procs_t::const_iterator pi = annotations->procs->find(dst.ea());
 			if (pi != annotations->procs->end() && pi->name)
 			{
-				int offset = dst.ea() - pi->begin;
+				int offset = dst.ea() - pi->begin();
 				sprintf(str+strlen(str), "%s", pi->name);
 				if (offset)
 					sprintf(str+strlen(str), "+%x", offset);
