@@ -204,6 +204,23 @@ void exe_mz_analyzer_t::analyze_blocks()
 
 void exe_mz_analyzer_t::analyze_procs()
 {
+	// Add a proc for the initial cs:ip
+	x86_16_address_t init_cs_ip = x86_16_address_t(base_seg + binary->head.e_cs, binary->head.e_ip);
+	if (!memory.is_proc(init_cs_ip.ea()))
+	{
+		memory.mark_as_proc(init_cs_ip.ea());
+
+		proc_t proc;
+		proc.addr = init_cs_ip;
+		proc.begin(init_cs_ip.ea());
+
+		char *name;
+		asprintf(&name, "_start");
+		proc.name = name;
+
+		annotations.procs->insert(proc);
+	}
+
 	// Go through all the registered call destinations and create procs
 	// starting there
 	for (addr_set_t::iterator i = call_dsts.begin(),
