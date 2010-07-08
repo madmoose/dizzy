@@ -214,6 +214,7 @@ void exe_mz_analyzer_t::analyze_procs()
 		memory.mark_as_proc(i->ea());
 
 		proc_t proc;
+		proc.addr = *i;
 		proc.begin(i->ea());
 
 		char *name;
@@ -244,22 +245,21 @@ void exe_mz_analyzer_t::analyze_procs()
 			++bi;
 		}
 
-		if (next_proc_ea <= bi->begin())
+		if (bi == blocks.end() || bi->end() > next_proc_ea)
 			--bi;
 
-		if (bi != blocks.end())
-			pi->end(bi->end());
+		pi->end(bi->end());
 
 		if (pi->end() <= pi->begin())
 		{
-			printf("Function annotation %04x:%04x '%s' invalid.\n", pi->addr.seg, pi->addr.ofs, pi->name);
+			printf("Function annotation %04x:%04x '%s' invalid. (%x-%x)\n", pi->addr.seg, pi->addr.ofs, pi->name, pi->begin(), pi->end());
 			memory.unmark_as_proc(pi->begin());
 		}
 	}
 
 	/*
 	for (procs_t::const_iterator pi = annotations.procs->begin(); pi != annotations.procs->end(); ++pi)
-		printf("%6x - %6x  %s\n", pi->begin(), pi->end(), pi->name);
+		printf("%04x:%04x  %6x - %6x  %s\n", pi->addr.seg, pi->addr.ofs, pi->begin(), pi->end(), pi->name);
 	*/
 }
 
