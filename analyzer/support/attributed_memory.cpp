@@ -68,6 +68,12 @@ void attributed_memory_t::mark_as_proc(uint32 ea)
 	*p |= ATTR_PROC;
 }
 
+void attributed_memory_t::mark_as_align(uint32 ea)
+{
+	byte *p = attrib_ref_at(ea);
+	*p |= ATTR_ALIGN;
+}
+
 void attributed_memory_t::unmark_as_proc(uint32 ea)
 {
 	byte *p = attrib_ref_at(ea);
@@ -112,4 +118,10 @@ bool attributed_memory_t::is_proc(uint32 ea) const
 {
 	byte *p = attrib_ref_at(ea);
 	return (*p) & ATTR_PROC;
+}
+
+bool attributed_memory_t::is_align(uint32 ea) const
+{
+	byte *p = attrib_ref_at(ea);
+	return (*p) & ATTR_ALIGN;
 }

@@ -160,6 +160,18 @@ void exe_mz_analyzer_t::trace()
 			cs_ip.ofs += insn.op_size;
 		}
 	}
+
+	uint32 base_ea = base_seg << 4;
+	for (uint32 ea = base_ea; ea < base_ea + binary->image_size; ++ea)
+	{
+		if ((*memory.ref_at(ea) == 0x90 || *memory.ref_at(ea) == 0xcb) &&
+		    memory.is_unmarked(ea) &&
+		    (ea == base_ea || memory.is_code(ea-1) || memory.is_align(ea-1) || memory.is_code(ea-1))
+		   )
+		{
+			memory.mark_as_align(ea);
+		}
+	}
 }
 
 void exe_mz_analyzer_t::analyze_blocks()
@@ -350,6 +362,13 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 
 				cur_proc_i = annotations.procs->end();
 			}
+		}
+		else if (memory.is_align(ea))
+		{
+			fs.puts("");
+			fs.set_col(27);
+			fs.printf("align\n");
+			++ea;
 		}
 		else
 		{
