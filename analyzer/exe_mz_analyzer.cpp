@@ -55,10 +55,13 @@ void exe_mz_analyzer_t::analyze()
 void exe_mz_analyzer_t::load()
 {
 	base_seg = 0x1000;
-	memory.allocate(base_seg << 4, binary->image_size);
+	begin_ea = base_seg << 4;
+	end_ea   = begin_ea + binary->image_size;
+
+	memory.allocate(begin_ea, binary->image_size);
 
 	// Load binary into memory
-	byte *dst = memory.ref_at(base_seg << 4);
+	byte *dst = memory.ref_at(begin_ea);
 	memcpy(dst, binary->image, binary->image_size);
 
 	relocate();
@@ -161,12 +164,11 @@ void exe_mz_analyzer_t::trace()
 		}
 	}
 
-	uint32 base_ea = base_seg << 4;
-	for (uint32 ea = base_ea; ea < base_ea + binary->image_size; ++ea)
+	for (uint32 ea = begin_ea; ea < end_ea; ++ea)
 	{
 		if ((*memory.ref_at(ea) == 0x90 || *memory.ref_at(ea) == 0xcb) &&
 		    memory.is_unmarked(ea) &&
-		    (ea == base_ea || memory.is_code(ea-1) || memory.is_align(ea-1) || memory.is_code(ea-1))
+		    (ea == begin_ea || memory.is_code(ea-1) || memory.is_align(ea-1) || memory.is_code(ea-1))
 		   )
 		{
 			memory.mark_as_align(ea);
@@ -176,41 +178,40 @@ void exe_mz_analyzer_t::trace()
 
 void exe_mz_analyzer_t::analyze_blocks()
 {
-	uint32 begin_ea = base_seg << 4;
-	uint32 end_ea;
-	uint32 image_end = begin_ea + binary->image_size;
+	uint32 block_begin = begin_ea;
+	uint32 block_end;
 
 	for (;;)
 	{
 		// Find beginning of block
-		while (begin_ea != image_end && !memory.is_op(begin_ea))
-			++begin_ea;
-		if (begin_ea == image_end)
+		while (block_begin != end_ea && !memory.is_op(block_begin))
+			++block_begin;
+		if (block_begin == end_ea)
 			break;
-		assert(!memory.is_flow(begin_ea));
+		assert(!memory.is_flow(block_begin));
 
 		// Find end of block
-		end_ea = begin_ea + 1;
-		while (end_ea != image_end && ((memory.is_op(end_ea) && memory.is_flow(end_ea)) || memory.is_cont(end_ea)))
-			++end_ea;
+		block_end = block_begin + 1;
+		while (block_end != end_ea && ((memory.is_op(block_end) && memory.is_flow(block_end)) || memory.is_cont(block_end)))
+			++block_end;
 
 		// Back up and find last op before end_ea
-		uint32 last_op = end_ea;
+		uint32 last_op = block_end;
 		while (!memory.is_op(--last_op))
 			;
 		x86_insn insn = x86_decode(memory.ref_at(last_op));
 
 		// Record block information
 		block_t block;
-		block.begin(begin_ea);
-		block.end(end_ea);
+		block.begin(block_begin);
+		block.end(block_end);
 		block.terminator_op_name = insn.op_name;
 
 		blocks.insert(block);
 
-		if (end_ea == image_end)
+		if (block_end == end_ea)
 			break;
-		begin_ea = end_ea;
+		block_begin = block_end;
 	}
 }
 
@@ -262,7 +263,7 @@ void exe_mz_analyzer_t::analyze_procs()
 		uint32 next_proc_ea =
 			next_pi != annotations.procs->end()
 			? next_pi->begin()
-			: ((base_seg << 4) + binary->image_size);
+			: end_ea;
 
 		blocks_t::iterator bi = blocks.find(pi->begin());
 		assert(bi != blocks.end());
@@ -312,7 +313,6 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 {
 	x86_16_address_t addr = x86_16_address_t(base_seg, 0);
 	uint32 ea = addr.ea();
-	uint32 end_ea = ea + binary->image_size;
 
 	x86_16_address_t cur_proc_addr;
 	procs_t::iterator cur_proc_i = annotations.procs->end();

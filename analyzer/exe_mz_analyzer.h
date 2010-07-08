@@ -18,10 +18,12 @@ class exe_mz_analyzer_t
 	typedef std::set<x86_16_address_t>                        addr_set_t;
 
 	exe_mz_t                  *binary;
-	x86_16_segments_t          segments;
-
 	x86_16_seg_t               base_seg;
+	uint32                     begin_ea;
+	uint32                     end_ea;
+
 	attributed_memory_t        memory;
+	x86_16_segments_t          segments;
 
 	edge_map_t                 edge;
 	edge_map_t                 back_edge;
