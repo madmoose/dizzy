@@ -41,12 +41,6 @@ RUNNING
 
 TODO
 
-Basic blocks should probably be tracked.
-
-Functions should be autodetected. It's not hard, just start with a call
-destination and the follow all paths until they've hit a ret. This'll cover 99%
-of the cases.
-
 There's a confusion of c strings and c++ std::strings in the code. This needs a
 decision.
 
