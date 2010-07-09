@@ -5,6 +5,8 @@
 
 #include "analyzer/exe_mz_analyzer.h"
 
+#include <libgen.h>
+
 int main(int argc, char **argv)
 {
 	if (argc != 2)
@@ -22,7 +24,11 @@ int main(int argc, char **argv)
 
 	exe_mz_analyzer_t analyzer;
 	analyzer.init(dynamic_cast<exe_mz_t*>(binary));
-	analyzer.load_annotations("zak.exe.names.txt");
+
+	char *annotions_fn;
+	asprintf(&annotions_fn, "%s.names.txt", basename(argv[1]));
+	analyzer.load_annotations(annotions_fn);
+	free(annotions_fn);
 
 	analyzer.analyze();
 

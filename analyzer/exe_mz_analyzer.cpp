@@ -17,8 +17,11 @@ void exe_mz_analyzer_t::init(exe_mz_t *abinary)
 
 void exe_mz_analyzer_t::load_annotations(const char *fn)
 {
-	puts("\nAnnotations:");
 	std::ifstream ifs(fn);
+	if (!ifs)
+		return;
+
+	puts("\nAnnotations:");
 	std::string line;
 	while (std::getline(ifs, line))
 	{
@@ -239,13 +242,20 @@ void exe_mz_analyzer_t::analyze_procs()
 	for (addr_set_t::iterator i = call_dsts.begin(),
 	                          e = call_dsts.end(); i != e; ++i)
 	{
-		if (memory.is_proc(i->ea()))
+		uint32 ea = i->ea();
+		if (ea < begin_ea || end_ea <= ea)
+		{
+			printf("%6x (%6x - %6x)\n", ea, begin_ea, end_ea);
 			continue;
-		memory.mark_as_proc(i->ea());
+		}
+
+		if (memory.is_proc(ea))
+			continue;
+		memory.mark_as_proc(ea);
 
 		proc_t proc;
 		proc.addr = *i;
-		proc.begin(i->ea());
+		proc.begin(ea);
 
 		char *name;
 		asprintf(&name, "sub_%x", proc.begin());
