@@ -4,13 +4,16 @@
 #include "base/base.h"
 #include "x86_analyzer_support.h"
 
-#include <vector>
+#include <set>
+
 
 struct proc_t : public range_t<uint32>
 {
 	x86_16_address_t addr;
 
 	const char *name;
+
+	std::set<uint32> blocks;
 
 	proc_t()
 		: name(0)

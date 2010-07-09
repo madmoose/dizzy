@@ -258,27 +258,43 @@ void exe_mz_analyzer_t::analyze_procs()
 	                       pe = annotations.procs->end();
 	                       pi != pe; ++pi)
 	{
-		procs_t::iterator next_pi = pi;
-		++next_pi;
+		uint32 proc_ea = pi->begin();
+		uint32 proc_end_ea = proc_ea;
+
+		procs_t::iterator next_pi = pi; ++next_pi;
 		uint32 next_proc_ea =
 			next_pi != annotations.procs->end()
 			? next_pi->begin()
 			: end_ea;
 
-		blocks_t::iterator bi = blocks.find(pi->begin());
+		blocks_t::iterator bi = blocks.find(proc_ea);
 		assert(bi != blocks.end());
 
-		while (bi != blocks.end() &&
-		       bi->begin() < next_proc_ea
-		       && bi->terminator_op_name != op_ret)
+		std::priority_queue<uint32> todo;
+
+		todo.push(bi->begin());
+
+		while (!todo.empty())
 		{
-			++bi;
+			blocks_t::iterator bi = blocks.find(todo.top());
+			todo.pop();
+
+			proc_end_ea = std::max(proc_end_ea, bi->end());
+
+			pi->blocks.insert(bi->begin());
+
+			edge_map_t::const_iterator edges_begin = edge.lower_bound(bi->begin());
+			edge_map_t::const_iterator edges_end   = edge.lower_bound(bi->end());
+
+			for (edge_map_t::const_iterator e = edges_begin; e != edges_end; ++e)
+			{
+				uint32 dest_block = blocks.find(e->second)->begin();
+
+				if (proc_ea <= dest_block && dest_block < next_proc_ea && pi->blocks.find(dest_block) == pi->blocks.end())
+					todo.push(dest_block);
+			}
 		}
-
-		if (bi == blocks.end() || bi->end() > next_proc_ea)
-			--bi;
-
-		pi->end(bi->end());
+		pi->end(proc_end_ea);
 
 		if (pi->end() <= pi->begin())
 		{
@@ -300,8 +316,8 @@ void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &in
 	if (!x86_16_branch_destination(insn, addr, &dst))
 		return;
 
-	edge.insert(std::make_pair(addr, dst));
-	back_edge.insert(std::make_pair(dst, addr));
+	edge.insert(std::make_pair(addr.ea(), dst.ea()));
+	back_edge.insert(std::make_pair(dst.ea(), addr.ea()));
 
 	if (insn.op_name == op_call)
 		call_dsts.insert(dst);

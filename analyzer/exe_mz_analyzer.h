@@ -13,9 +13,9 @@
 
 class exe_mz_analyzer_t
 {
-	typedef std::multimap<x86_16_address_t, x86_16_address_t> edge_map_t;
-	typedef std::priority_queue<x86_16_address_t>             addr_queue_t;
-	typedef std::set<x86_16_address_t>                        addr_set_t;
+	typedef std::multimap<uint32, uint32>          edge_map_t;
+	typedef std::priority_queue<x86_16_address_t>  addr_queue_t;
+	typedef std::set<x86_16_address_t>             addr_set_t;
 
 	exe_mz_t                  *binary;
 	x86_16_seg_t               base_seg;

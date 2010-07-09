@@ -5,7 +5,6 @@
 #include "x86_analyzer_support.h"
 #include "x86/x86_disasm.h"
 
-#include <vector>
 
 struct block_t : public range_t<uint32>
 {
