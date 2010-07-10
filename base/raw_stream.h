@@ -14,7 +14,7 @@
  * raw_imstream_t - a class for reading from a piece of memory
  *
  * raw_ostream_t  - a virtual base class for output streams
- * raw_ostream_t  - a class for writing to a piece of memory
+ * raw_omstream_t - a class for writing to a piece of memory
  *
  * For reading from a file, it's probably preferable to read the entire file
  * into memory using raw_imstream_t - there's a constructor that takes a filename.
@@ -27,6 +27,7 @@ protected:
 	uint32 _pos;
 public:
 	raw_istream_t()
+		: _size(0), _pos(0)
 	{}
 	virtual ~raw_istream_t()
 	{}
@@ -51,6 +52,9 @@ public:
 	void seek_cur(int d);
 
 	void reset();
+private:
+	raw_istream_t(const raw_istream_t&);
+	const raw_istream_t& operator=(const raw_istream_t&);
 };
 
 class raw_ifstream_t : public raw_istream_t {
@@ -74,6 +78,9 @@ public:
 	~raw_imstream_t();
 
 	void read(byte *p, uint s);
+private:
+	raw_imstream_t(const raw_imstream_t&);
+	const raw_imstream_t& operator=(const raw_imstream_t&);
 };
 
 class raw_ostream_t {
@@ -82,6 +89,7 @@ protected:
 	uint32  _pos;
 public:
 	raw_ostream_t()
+		: _size(0), _pos(0)
 	{}
 	virtual ~raw_ostream_t()
 	{}
@@ -104,19 +112,22 @@ public:
 	void seek_cur(int  d);
 };
 
-class raw_ostream_tm : public raw_ostream_t {
+class raw_omstream_t : public raw_ostream_t {
 protected:
 	byte   *_p;
 	bool    _delete_when_done;
 	bool    _expanding;
 	uint32  _capacity;
 public:
-	raw_ostream_tm(byte *p, uint32 s, bool delete_when_done = false);
-	raw_ostream_tm(uint32 size);
-	raw_ostream_tm();
-	~raw_ostream_tm();
+	raw_omstream_t(byte *p, uint32 s, bool delete_when_done = false);
+	raw_omstream_t(uint32 size);
+	raw_omstream_t();
+	~raw_omstream_t();
 
 	void write(const byte *p, uint s);
+private:
+	raw_omstream_t(const raw_omstream_t&);
+	const raw_omstream_t& operator=(const raw_omstream_t&);
 };
 
 /*

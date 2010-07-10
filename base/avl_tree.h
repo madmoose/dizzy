@@ -336,7 +336,9 @@ private:
 
 public:
 	avl_tree_t()
-		: _root(end_node())
+		: _root(end_node()), _end_node()
+	{}
+	virtual ~avl_tree_t()
 	{}
 
 protected:
@@ -360,6 +362,9 @@ protected:
 
 		return iterator(n);
 	}
+private:
+	avl_tree_t(const avl_tree_t&);
+	const avl_tree_t& operator= (const avl_tree_t&);
 };
 
 #endif

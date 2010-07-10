@@ -16,7 +16,7 @@ struct proc_t : public range_t<uint32>
 	std::set<uint32> blocks;
 
 	proc_t()
-		: name(0)
+		: addr(), name(0), blocks()
 	{}
 };
 

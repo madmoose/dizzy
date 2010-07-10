@@ -186,7 +186,9 @@ struct x86_insn_arg
 	};
 
 	x86_insn_arg()
-		: kind(KN_NONE), size(SZ_UNK)
+		: kind(KN_NONE), size(SZ_UNK),
+		  reg(0), imm(0), seg(0), ofs(0),
+		  seg_ovr(0), base_reg(0), idx_reg(0), disp_size(0), disp(0)
 	{}
 
 	void to_str(char *str);

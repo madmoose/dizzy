@@ -27,6 +27,13 @@ public:
 		++_p[-1];
 	}
 
+	const data_t& operator=(const data_t& b)
+	{
+		_p = b._p;
+		++_p[-1];
+		return *this;
+	}
+
 	~data_t()
 	{
 		//puts("Destructor");

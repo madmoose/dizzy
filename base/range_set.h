@@ -109,6 +109,8 @@ struct range_t {
 	range_t(const T &_begin, const T &_end)
 		: _begin(_begin), _end(_end)
 	{}
+
+	virtual ~range_t() {}
 };
 
 #endif

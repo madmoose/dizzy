@@ -105,10 +105,10 @@ void raw_ostream_t::writebe32(uint32 a)
 }
 
 /*
- * raw_ostream_tm
+ * raw_omstream_t
  */
 
-raw_ostream_tm::raw_ostream_tm(byte *p, uint32 size, bool delete_when_done)
+raw_omstream_t::raw_omstream_t(byte *p, uint32 size, bool delete_when_done)
 {
 	_p = p;
 	_pos = 0;
@@ -117,7 +117,7 @@ raw_ostream_tm::raw_ostream_tm(byte *p, uint32 size, bool delete_when_done)
 	_expanding = false;
 }
 
-raw_ostream_tm::raw_ostream_tm(uint32 size)
+raw_omstream_t::raw_omstream_t(uint32 size)
 {
 	_p = new byte[size];
 	_pos = 0;
@@ -126,7 +126,7 @@ raw_ostream_tm::raw_ostream_tm(uint32 size)
 	_expanding = false;
 }
 
-raw_ostream_tm::raw_ostream_tm()
+raw_omstream_t::raw_omstream_t()
 {
 	_p = 0;
 	_pos = 0;
@@ -136,13 +136,13 @@ raw_ostream_tm::raw_ostream_tm()
 	_capacity = 0;
 }
 
-raw_ostream_tm::~raw_ostream_tm()
+raw_omstream_t::~raw_omstream_t()
 {
 	if (_delete_when_done)
 		delete[] _p;
 }
 
-void raw_ostream_tm::write(const byte *p, uint s)
+void raw_omstream_t::write(const byte *p, uint s)
 {
 	if (_expanding && _pos + s >= _capacity)
 	{

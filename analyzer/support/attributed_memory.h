@@ -23,11 +23,8 @@ class attributed_memory_t
 		byte        *memory;
 		byte        *attribs;
 
-		memory_block_t()
-		{}
-
 		memory_block_t(uint32 begin, uint32 size)
-			: begin(begin), size(size)
+			: begin(begin), size(size), memory(0), attribs(0)
 		{}
 	};
 

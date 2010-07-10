@@ -36,7 +36,7 @@ x86_16_address_t x86_16_segments_t::addr_at_ea(uint32 ea) const
 	for (segments_t::const_iterator i = segments.begin(); i != segments.end(); ++i)
 	{
 		x86_16_seg_t i_seg = i->seg;
-		if (i_seg << 4 > ea)
+		if (((uint32)i_seg) << 4 > ea)
 			break;
 		seg = i_seg;
 	}
