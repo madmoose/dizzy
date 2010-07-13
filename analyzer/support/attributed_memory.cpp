@@ -56,6 +56,17 @@ void attributed_memory_t::mark_as_code(uint32 ea, uint len)
 		*p++ |= ATTR_CONT;
 }
 
+void attributed_memory_t::unmark_as_code(uint32 ea)
+{
+	byte *p = attrib_ref_at(ea);
+	while (!(*p | ATTR_OP))
+		--p;
+	*p++ &= ~ATTR_OP;
+	*p++ &= ~ATTR_FLOW;
+	while (*p | ATTR_CONT)
+		*p++ &= ~ATTR_CONT;
+}
+
 void attributed_memory_t::mark_as_flow(uint32 ea)
 {
 	byte *p = attrib_ref_at(ea);

@@ -138,14 +138,19 @@ void exe_mz_analyzer_t::trace()
 
 			if (!cs_ip_p) break;
 
-			if (is_continuation)
-				memory.mark_as_flow(cs_ip_ea);
-			if (memory.is_code(cs_ip_ea)) break;
+			if (memory.is_code(cs_ip_ea))
+			{
+				if (is_continuation && !memory.is_proc(cs_ip_ea))
+					memory.mark_as_flow(cs_ip_ea);
+				break;
+			}
 
 			x86_insn insn = x86_decode(cs_ip_p);
 
-			//if (!memory.is_unmarked(cs_ip_ea, insn.op_size)) break;
+			if (!(memory.is_unmarked(cs_ip_ea) || memory.is_proc(cs_ip_ea)) || !memory.is_unmarked(cs_ip_ea+1, insn.op_size-1)) break;
 			memory.mark_as_code(cs_ip_ea, insn.op_size);
+			if (is_continuation)
+				memory.mark_as_flow(cs_ip_ea);
 			segments.register_address(cs_ip);
 			segments.register_address(x86_16_address_t(cs_ip.seg, cs_ip.ofs + insn.op_size - 1));
 
@@ -210,6 +215,8 @@ void exe_mz_analyzer_t::analyze_blocks()
 		block.end(block_end);
 		block.terminator_op_name = insn.op_name;
 
+		//printf("block %x - %x\n", block_begin, block_end);
+
 		blocks.insert(block);
 
 		if (block_end == end_ea)
@@ -222,6 +229,7 @@ void exe_mz_analyzer_t::analyze_procs()
 {
 	// Add a proc for the initial cs:ip
 	x86_16_address_t init_cs_ip = x86_16_address_t(base_seg + binary->head.e_cs, binary->head.e_ip);
+	printf("init_cs_ip: %x\n", init_cs_ip.ea());
 	if (!memory.is_proc(init_cs_ip.ea()))
 	{
 		memory.mark_as_proc(init_cs_ip.ea());
@@ -249,19 +257,28 @@ void exe_mz_analyzer_t::analyze_procs()
 			continue;
 		}
 
-		if (memory.is_proc(ea))
-			continue;
-		memory.mark_as_proc(ea);
+		assert(memory.is_proc(ea));
 
-		proc_t proc;
-		proc.addr = *i;
-		proc.begin(ea);
+		procs_t::iterator pi = annotations.procs->find_with_begin(ea);
+		if (pi != annotations.procs->end() && pi->begin() != ea)
+			pi = annotations.procs->end();
 
-		char *name;
-		asprintf(&name, "sub_%x", proc.begin());
-		proc.name = name;
+		if (pi == annotations.procs->end())
+		{
+			proc_t proc;
+			proc.addr = *i;
+			proc.begin(ea);
+			proc.end(ea);
 
-		annotations.procs->insert(proc);
+			pi = annotations.procs->insert(proc);
+		}
+
+		if (!pi->name)
+		{
+			char *name;
+			asprintf(&name, "sub_%x", ea);
+			pi->name = name;
+		}
 	}
 
 	for (procs_t::iterator pi = annotations.procs->begin(),
@@ -278,7 +295,14 @@ void exe_mz_analyzer_t::analyze_procs()
 			: end_ea;
 
 		blocks_t::iterator bi = blocks.find(proc_ea);
+		if (bi == blocks.end())
+		{
+			printf("No block for proc at %x\n", proc_ea);
+			break;
+		}
 		assert(bi != blocks.end());
+
+		//printf("Analyzing proc at %x %s (next: %x)\n", proc_ea, pi->name, next_proc_ea);
 
 		std::priority_queue<uint32> todo;
 
@@ -300,7 +324,17 @@ void exe_mz_analyzer_t::analyze_procs()
 			{
 				uint32 dest_block = blocks.find(e->second)->begin();
 
-				if (proc_ea <= dest_block && dest_block < next_proc_ea && pi->blocks.find(dest_block) == pi->blocks.end())
+				x86_insn insn = x86_decode(memory.ref_at(e->first));
+				char insn_str[64];
+				insn.to_str(insn_str);
+
+				if (insn.op_name == op_call)
+					; // ignore calls
+				else if (dest_block < proc_ea)
+					printf("Proc analysis: In proc %s at %x, jump to address %x preceding proc start. [%s]\n", pi->name, e->first, e->second, insn_str);
+				else if (dest_block >= next_proc_ea)
+					printf("Proc analysis: In proc %s at %x, jump to address %x after next proc start. [%s]\n", pi->name, e->first, e->second, insn_str);
+				else if (pi->blocks.find(dest_block) == pi->blocks.end())
 					todo.push(dest_block);
 			}
 		}
@@ -326,11 +360,22 @@ void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &in
 	if (!x86_16_branch_destination(insn, addr, &dst))
 		return;
 
-	edge.insert(std::make_pair(addr.ea(), dst.ea()));
-	back_edge.insert(std::make_pair(dst.ea(), addr.ea()));
+	uint32 addr_ea = addr.ea();
+	uint32 dst_ea  = dst.ea();
 
-	if (insn.op_name == op_call)
+	edge.insert(std::make_pair(addr_ea, dst_ea));
+	back_edge.insert(std::make_pair(dst_ea, addr_ea));
+
+	if (insn.op_name == op_call && !memory.is_proc(dst_ea))
+	{
+		if (memory.is_code(dst_ea))
+		{
+			printf("At %x: Call destination %x overriding code marking\n", addr_ea, dst_ea);
+			memory.unmark_as_code(dst_ea);
+		}
+		memory.mark_as_proc(dst_ea);
 		call_dsts.insert(dst);
+	}
 
 	cs_ip_queue.push(dst);
 }
@@ -440,6 +485,12 @@ const char *exe_mz_analyzer_t::get_proc_name(uint32 ea) const
 	assert(memory.is_proc(ea));
 
 	procs_t::const_iterator pi = annotations.procs->find(ea);
+	if (pi == annotations.procs->end())
+	{
+		printf("exe_mz_analyzer_t::get_proc_name\n");
+		printf("ea: %x\n", ea);
+		return "xxx";
+	}
 	assert(pi != annotations.procs->end());
 
 	return pi->name;

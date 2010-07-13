@@ -39,6 +39,8 @@ public:
 	byte *ref_at(uint32 ea) const;
 
 	void mark_as_code(uint32 ea, uint len = 1);
+	void unmark_as_code(uint32 ea);
+
 	void mark_as_flow(uint32 ea);
 	void mark_as_proc(uint32 ea);
 	void mark_as_align(uint32 ea);
