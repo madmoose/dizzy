@@ -6,10 +6,6 @@
 #include <queue>
 #include <sstream>
 
-#include "support/annotations.h"
-#include "support/blocks.h"
-#include "support/procs.h"
-
 void exe_mz_analyzer_t::init(exe_mz_t *abinary)
 {
 	binary = abinary;
@@ -317,10 +313,10 @@ void exe_mz_analyzer_t::analyze_procs()
 
 			pi->blocks.insert(bi->begin());
 
-			edge_map_t::const_iterator edges_begin = edge.lower_bound(bi->begin());
-			edge_map_t::const_iterator edges_end   = edge.lower_bound(bi->end());
+			edges_t::const_iterator edges_begin = edges.edge().lower_bound(bi->begin());
+			edges_t::const_iterator edges_end   = edges.edge().lower_bound(bi->end());
 
-			for (edge_map_t::const_iterator e = edges_begin; e != edges_end; ++e)
+			for (edges_t::const_iterator e = edges_begin; e != edges_end; ++e)
 			{
 				uint32 dest_block = blocks.find(e->second)->begin();
 
@@ -331,9 +327,9 @@ void exe_mz_analyzer_t::analyze_procs()
 				if (insn.op_name == op_call)
 					; // ignore calls
 				else if (dest_block < proc_ea)
-					printf("Proc analysis: In proc %s at %x, jump to address %x preceding proc start. [%s]\n", pi->name, e->first, e->second, insn_str);
+					printf("Proc analysis: In proc %s at %x, jump to address %x which is before proc start. [%s]\n", pi->name, e->first, e->second, insn_str);
 				else if (dest_block >= next_proc_ea)
-					printf("Proc analysis: In proc %s at %x, jump to address %x after next proc start. [%s]\n", pi->name, e->first, e->second, insn_str);
+					printf("Proc analysis: In proc %s at %x, jump to address %x which is after next proc start. [%s]\n", pi->name, e->first, e->second, insn_str);
 				else if (pi->blocks.find(dest_block) == pi->blocks.end())
 					todo.push(dest_block);
 			}
@@ -363,8 +359,7 @@ void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &in
 	uint32 addr_ea = addr.ea();
 	uint32 dst_ea  = dst.ea();
 
-	edge.insert(std::make_pair(addr_ea, dst_ea));
-	back_edge.insert(std::make_pair(dst_ea, addr_ea));
+	edges.add_edge(addr_ea, dst_ea);
 
 	if (insn.op_name == op_call && !memory.is_proc(dst_ea))
 	{
