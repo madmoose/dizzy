@@ -380,7 +380,8 @@ void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &in
 void exe_mz_analyzer_t::output(fmt_stream &fs)
 {
 	x86_16_address_t addr = x86_16_address_t(base_seg, 0);
-	uint32 ea = addr.ea();
+	uint32 start_ea, ea;
+	start_ea = ea = addr.ea();
 
 	x86_16_address_t cur_proc_addr;
 	procs_t::iterator cur_proc_i = annotations.procs->end();
@@ -433,7 +434,8 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 		}
 		else if (memory.is_align(ea))
 		{
-			fs.puts("");
+			if (ea > start_ea)
+				fs.puts("");
 			fs.set_col(27);
 			fs.printf("align");
 
