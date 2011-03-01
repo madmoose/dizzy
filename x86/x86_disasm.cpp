@@ -646,27 +646,24 @@ void x86_insn::to_str(char *str, x86_16_address_t addr, annotations_t *annotatio
 	if (is_branch(op_name) && arg[0].kind == KN_IMM)
 	{
 		x86_16_address_t dst;
+		bool has_name = false;
+		procs_t::const_iterator pi;
 
 		if (annotations && x86_16_branch_destination(*this, addr, &dst))
 		{
-			procs_t::const_iterator pi = annotations->procs->find(dst.ea());
+			pi = annotations->procs->find(dst.ea());
 			if (pi != annotations->procs->end() && pi->name)
-			{
-				int offset = dst.ea() - pi->begin();
-				sprintf(str+strlen(str), "%s", pi->name);
-				if (offset)
-					sprintf(str+strlen(str), "+%x", offset);
-
-				int w = strlen(str);
-				while (w < 24)
-					str[w++] = ' ';
-				str[w] = '\0';
-				sprintf(str+strlen(str), " (%04x:%04x)", dst.seg, dst.ofs);
-				return;
-			}
+				has_name = true;
 		}
 
-		if (arg[0].size == SZ_BYTE)
+		if (has_name)
+		{
+			int offset = dst.ea() - pi->begin();
+			sprintf(str+strlen(str), "%s", pi->name);
+			if (offset)
+				sprintf(str+strlen(str), "+%x", offset);
+		}
+		else if (arg[0].size == SZ_BYTE)
 		{
 			sprintf(str+strlen(str), "%08X", (int8)(arg[0].imm + op_size));
 			sprintf(str+strlen(str), " ($%c%x)", arg[0].imm & 0x80 ? '-' : '+', (arg[0].imm & 0x80 ? -arg[0].imm : arg[0].imm) & 0xff);
@@ -676,6 +673,13 @@ void x86_insn::to_str(char *str, x86_16_address_t addr, annotations_t *annotatio
 			sprintf(str+strlen(str), "%08X", (int16)(arg[0].imm + op_size));
 			sprintf(str+strlen(str), " ($%c%x)", arg[0].imm & 0x8000 ? '-' : '+', (arg[0].imm & 0x8000 ? -arg[0].imm : arg[0].imm) & 0xffff);
 		}
+
+		// pad to 24 cols
+		int w = strlen(str);
+		while (w < 24)
+			str[w++] = ' ';
+		str[w] = '\0';
+		sprintf(str+strlen(str), " (%04x:%04x)", dst.seg, dst.ofs);
 		return;
 	}
 
