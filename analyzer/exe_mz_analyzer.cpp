@@ -170,7 +170,9 @@ void exe_mz_analyzer_t::trace()
 
 	for (uint32 ea = begin_ea; ea < end_ea; ++ea)
 	{
-		if ((*memory.ref_at(ea) == 0x90 || *memory.ref_at(ea) == 0xcb) &&
+		if ((*memory.ref_at(ea) == 0x00 ||
+		     *memory.ref_at(ea) == 0x90 ||
+		     *memory.ref_at(ea) == 0xcb) &&
 		    memory.is_unmarked(ea) &&
 		    (ea == begin_ea || memory.is_code(ea-1) || memory.is_align(ea-1) || memory.is_code(ea-1))
 		   )
@@ -433,8 +435,17 @@ void exe_mz_analyzer_t::output(fmt_stream &fs)
 		{
 			fs.puts("");
 			fs.set_col(27);
-			fs.printf("align\n");
-			++ea;
+			fs.printf("align");
+
+			byte b = *memory.ref_at(ea);
+			int cnt = 0;
+			do {
+				++ea;
+				++cnt;
+			} while (b == *memory.ref_at(ea));
+
+			fs.printf(" %d x 0x%02x", cnt, b);
+			fs.puts("");
 		}
 		else
 		{
