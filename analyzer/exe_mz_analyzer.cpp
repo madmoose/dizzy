@@ -174,7 +174,9 @@ void exe_mz_analyzer_t::trace()
 		     *memory.ref_at(ea) == 0x90 ||
 		     *memory.ref_at(ea) == 0xcb) &&
 		    memory.is_unmarked(ea) &&
-		    (ea == begin_ea || memory.is_code(ea-1) || memory.is_align(ea-1) || memory.is_code(ea-1))
+		    (ea == begin_ea ||
+		     memory.is_code(ea-1) ||
+		     memory.is_align(ea-1))
 		   )
 		{
 			memory.mark_as_align(ea);
