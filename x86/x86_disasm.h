@@ -137,6 +137,11 @@ enum e_regs
 	r_ax, r_cx, r_dx, r_bx,
 	r_sp, r_bp, r_si, r_di,
 	r_es, r_cs, r_ss, r_ds, //r_fs, r_gs,
+	r_cf, r_f1, r_pf, r_f2,
+	f_af, r_f3, r_zf, r_sf,
+	r_tf, r_if, r_df, r_of,
+	r_f4, r_f5, r_nt, r_f6,
+	r_flag,
 	r_none
 };
 
@@ -186,9 +191,7 @@ struct x86_insn_arg
 	};
 
 	x86_insn_arg()
-		: kind(KN_NONE), size(SZ_UNK),
-		  reg(0), imm(0), seg(0), ofs(0),
-		  seg_ovr(0), base_reg(0), idx_reg(0), disp_size(0), disp(0)
+		: kind(KN_NONE), size(SZ_UNK)
 	{}
 
 	void to_str(char *str);
