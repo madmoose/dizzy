@@ -14,4 +14,10 @@ typedef int32_t int32;
 
 typedef unsigned int uint;
 
+inline
+byte lo(uint16 v) { return (byte)(v & 0xff); }
+
+inline
+byte hi(uint16 v) { return (byte)(v >> 8); }
+
 #endif
