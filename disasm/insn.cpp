@@ -1,4 +1,4 @@
-#include "inst.h"
+#include "insn.h"
 
 void insn_t::add_arg(insn_arg_t *arg)
 {

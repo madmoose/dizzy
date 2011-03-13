@@ -1,4 +1,4 @@
-#include "inst.h"
+#include "insn.h"
 
 struct insn_printer_t : insn_visitor_t, insn_arg_visitor_t
 {
