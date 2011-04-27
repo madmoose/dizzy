@@ -1,6 +1,8 @@
 #include "x86_analyzer_support.h"
 #include "x86/x86_disasm.h"
 
+#include <stdio.h>
+
 void x86_16_segments_t::make_segment(x86_16_seg_t seg)
 {
 	x86_16_segment_t segment;

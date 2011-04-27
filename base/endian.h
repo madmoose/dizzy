@@ -80,25 +80,33 @@ uint32 betoh32(uint32 a) {
 	return swap32(a);
 }
 
+#ifndef htole16
 inline
 uint16 htole16(uint16 a) {
 	return a;
 }
+#endif
 
+#ifndef htobe16
 inline
 uint16 htobe16(uint16 a) {
 	return swap16(a);
 }
+#endif
 
+#ifndef htole32
 inline
 uint32 htole32(uint32 a) {
 	return a;
 }
+#endif
 
+#ifndef htobe32
 inline
 uint32 htobe32(uint32 a) {
 	return swap32(a);
 }
+#endif
 
 #else
 #error Unknown endianess!

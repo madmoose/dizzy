@@ -1,5 +1,7 @@
 #include "exe_mz.h"
 
+#include <stdio.h>
+
 exe_mz_t::~exe_mz_t()
 {
 	delete[] image;

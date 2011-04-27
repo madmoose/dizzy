@@ -4,6 +4,7 @@
 #include "types.h"
 #include "endian.h"
 
+#include <string.h>
 #include <string>
 
 /*

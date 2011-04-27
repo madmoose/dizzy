@@ -2,6 +2,8 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 fmt_stream::fmt_stream()
 {

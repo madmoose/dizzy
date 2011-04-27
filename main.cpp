@@ -5,6 +5,7 @@
 
 #include "analyzer/exe_mz_analyzer.h"
 
+#include <stdio.h>
 #include <libgen.h>
 
 int main(int argc, char **argv)
