@@ -5,7 +5,7 @@
 #include "support/annotations.h"
 #include "support/attributed_memory.h"
 #include "support/blocks.h"
-#include "support/edges.h"
+#include "support/edge_map.h"
 #include "support/x86_analyzer_support.h"
 
 #include <map>
@@ -14,7 +14,6 @@
 
 class exe_mz_analyzer_t
 {
-	typedef std::multimap<uint32, uint32>          edge_map_t;
 	typedef std::priority_queue<x86_16_address_t>  addr_queue_t;
 	typedef std::set<x86_16_address_t>             addr_set_t;
 
@@ -26,7 +25,7 @@ class exe_mz_analyzer_t
 	attributed_memory_t        memory;
 	x86_16_segments_t          segments;
 
-	edges_t                    edges;
+	edge_map_t                 branches;
 	addr_set_t                 call_dsts;
 
 	blocks_t                   blocks;

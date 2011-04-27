@@ -317,23 +317,23 @@ void exe_mz_analyzer_t::analyze_procs()
 
 			pi->blocks.insert(bi->begin());
 
-			edges_t::const_iterator edges_begin = edges.edge().lower_bound(bi->begin());
-			edges_t::const_iterator edges_end   = edges.edge().lower_bound(bi->end());
+			edge_map_t::const_iterator branches_begin = branches.edge().lower_bound(bi->begin());
+			edge_map_t::const_iterator branches_end   = branches.edge().lower_bound(bi->end());
 
-			for (edges_t::const_iterator e = edges_begin; e != edges_end; ++e)
+			for (edge_map_t::const_iterator bri = branches_begin; bri != branches_end; ++bri)
 			{
-				uint32 dest_block = blocks.find(e->second)->begin();
+				uint32 dest_block = blocks.find(bri->second)->begin();
 
-				x86_insn insn = x86_decode(memory.ref_at(e->first));
+				x86_insn insn = x86_decode(memory.ref_at(bri->first));
 				char insn_str[64];
 				insn.to_str(insn_str);
 
 				if (insn.op_name == op_call)
 					; // ignore calls
 				else if (dest_block < proc_ea)
-					printf("Proc analysis: In proc %s at %x, jump to address %x which is before proc start. [%s]\n", pi->name, e->first, e->second, insn_str);
+					printf("Proc analysis: In proc %s at %x, jump to address %x which is before proc start. [%s]\n", pi->name, bri->first, bri->second, insn_str);
 				else if (dest_block >= next_proc_ea)
-					printf("Proc analysis: In proc %s at %x, jump to address %x which is after next proc start. [%s]\n", pi->name, e->first, e->second, insn_str);
+					printf("Proc analysis: In proc %s at %x, jump to address %x which is after next proc start. [%s]\n", pi->name, bri->first, bri->second, insn_str);
 				else if (pi->blocks.find(dest_block) == pi->blocks.end())
 					todo.push(dest_block);
 			}
@@ -363,7 +363,7 @@ void exe_mz_analyzer_t::analyze_branch(x86_16_address_t addr, const x86_insn &in
 	uint32 addr_ea = addr.ea();
 	uint32 dst_ea  = dst.ea();
 
-	edges.add_edge(addr_ea, dst_ea);
+	branches.add_edge(addr_ea, dst_ea);
 
 	if (insn.op_name == op_call && !memory.is_proc(dst_ea))
 	{
