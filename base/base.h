@@ -8,5 +8,6 @@
 #include "data.h"
 #include "avl_tree.h"
 #include "range_set.h"
+#include "misc.h"
 
 #endif
