@@ -24,7 +24,8 @@ int main(int argc, char **argv)
 	}
 
 	binary_t *binary = new exe_mz_t();
-	binary->load(is);
+	if (!binary->load(is))
+		return 1;
 
 	printf("Binary identified as: %s\n", binary->name().c_str());
 

@@ -42,7 +42,7 @@ struct exe_mz_t : public binary_t {
 
 	std::string name() { return "DOS MZ executable"; }
 
-	void load(raw_istream_t &is);
+	bool load(raw_istream_t &is);
 
 	exe_mz_header_t                  head;
 	std::vector<exe_mz_relocation_t> relocations;

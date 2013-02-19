@@ -6,7 +6,7 @@
 class binary_t {
 public:
 	virtual std::string name() = 0;
-	virtual void load(raw_istream_t &is) = 0;
+	virtual bool load(raw_istream_t &is) = 0;
 	virtual ~binary_t() {}
 };
 

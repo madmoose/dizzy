@@ -7,9 +7,10 @@ exe_mz_t::~exe_mz_t()
 	delete[] image;
 }
 
-void exe_mz_t::load(raw_istream_t &is)
+bool exe_mz_t::load(raw_istream_t &is)
 {
-	head.load(is);
+	if (!head.load(is))
+		return false;
 
 	image_size = 512 * head.e_cp;
 	if (head.e_cblp)
@@ -32,11 +33,28 @@ void exe_mz_t::load(raw_istream_t &is)
 
 		relocations.push_back(reloc);
 	}
+	return true;
 }
+
+#define SIG_MZ 0x4d5a
+#define SIG_NE 0x4e45
 
 bool exe_mz_header_t::load(raw_istream_t &is)
 {
-	e_magic     = is.readle16();
+	if (is.rem() < 28)
+	{
+		puts("Not a valid executable: Size too small");
+		return false;
+	}
+
+	e_magic     = is.readbe16();
+
+	if (e_magic != SIG_MZ && e_magic != SIG_NE)
+	{
+		puts("Not a valid executable: Header magic not MZ or NE.");
+		return false;
+	}
+
 	e_cblp      = is.readle16();
 	e_cp        = is.readle16();
 	e_crlc      = is.readle16();
@@ -53,6 +71,9 @@ bool exe_mz_header_t::load(raw_istream_t &is)
 
 	if (e_lfarlc == 0x40)
 	{
+		if (is.rem() < 36)
+			return false;
+
 		for (int i = 0; i != 4; ++i)
 			e_res[i] = is.readle16();
 		e_oemid   = is.readle16();
@@ -62,7 +83,7 @@ bool exe_mz_header_t::load(raw_istream_t &is)
 		e_lfanew = is.readle32();
 	}
 
-	return true;
+	return is.good();
 }
 
 bool exe_mz_header_t::save(raw_ostream_t &os)
