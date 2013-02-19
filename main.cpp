@@ -17,6 +17,11 @@ int main(int argc, char **argv)
 	}
 
 	raw_imstream_t is(argv[1]);
+	if (!is.good())
+	{
+		printf("Unable to open file '%s'\n", argv[1]);
+		return 1;
+	}
 
 	binary_t *binary = new exe_mz_t();
 	binary->load(is);

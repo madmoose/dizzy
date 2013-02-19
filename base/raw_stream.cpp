@@ -2,7 +2,9 @@
 
 #include <fcntl.h>
 #include <sys/types.h>
+#ifndef _WIN32
 #include <sys/uio.h>
+#endif
 #include <unistd.h>
 
 /*
@@ -11,24 +13,44 @@
 
 raw_ifstream_t::raw_ifstream_t(const std::string &filename)
 {
+#ifdef _WIN32
+	_fd = _open(filename.c_str(), _O_RDONLY | _O_BINARY);
+#else
 	_fd = open(filename.c_str(), O_RDONLY);
+#endif
+	if (_fd < 0)
+	{
+		_good = false;
+		return;
+	}
 	_size = lseek(_fd, 0, SEEK_END);
 	_pos  = lseek(_fd, 0, SEEK_SET);
 }
 
 raw_ifstream_t::~raw_ifstream_t()
 {
-	close(_fd);
+	if (_fd >= 0)
+		close(_fd);
 }
 
 void raw_ifstream_t::read(byte *p, uint s)
 {
-	int r;
+	ssize_t r;
+
+	if (!_good)
+		return;
 
 	do {
+#ifdef _WIN32
+		r = _read(_fd, p, (size_t)s);
+#else
 		r = ::read(_fd, p, s);
+#endif
 		if (r == -1)
-			break;
+		{
+			_good = false;
+			return;
+		}
 
 		_pos += r;
 		p += r;
@@ -38,8 +60,10 @@ void raw_ifstream_t::read(byte *p, uint s)
 
 void raw_ifstream_t::seek_set(uint p)
 {
-	lseek(_fd, p, SEEK_SET);
-	_pos = p;
+	if (!_good)
+		return;
+
+	_pos = lseek(_fd, p, SEEK_SET);
 }
 
 /*
@@ -57,6 +81,11 @@ raw_imstream_t::raw_imstream_t(byte *p, uint32 s, bool delete_when_done)
 raw_imstream_t::raw_imstream_t(const std::string &filename)
 {
 	raw_ifstream_t is(filename);
+	if (!is.good())
+	{
+		_good = false;
+		return;
+	}
 	_size = is.size();
 	_p = new byte[_size];
 	is.read(_p, _size);

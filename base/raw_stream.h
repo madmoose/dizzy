@@ -26,9 +26,10 @@ class raw_istream_t {
 protected:
 	uint32 _size;
 	uint32 _pos;
+	bool   _good;
 public:
 	raw_istream_t()
-		: _size(0), _pos(0)
+		: _size(0), _pos(0), _good(true)
 	{}
 	virtual ~raw_istream_t()
 	{}
@@ -48,6 +49,7 @@ public:
 	uint32 size();
 	uint32 pos();
 	uint32 rem();
+	bool   good();
 
 	virtual void seek_set(uint p);
 	void seek_cur(int d);
@@ -193,6 +195,12 @@ uint32 raw_istream_t::rem() {
 }
 
 inline
+bool raw_istream_t::good()
+{
+	return _good;
+}
+
+inline
 void raw_istream_t::seek_set(uint p)
 {
 	_pos = p;
@@ -215,6 +223,9 @@ void raw_istream_t::reset() {
 inline
 void raw_imstream_t::read(byte *p, uint s)
 {
+	if (!_good)
+		return;
+
 	memcpy(p, _p + _pos, s);
 	_pos += s;
 }
