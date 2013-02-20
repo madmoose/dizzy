@@ -19,5 +19,6 @@ int asprintf(char **strp, const char *fmt, ...)
 	vsnprintf(*strp, len+1, fmt, args);
 
 	va_end(args);
+	return len;
 }
 #endif
